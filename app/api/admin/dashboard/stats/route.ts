@@ -1,0 +1,102 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { students, subjects, results, pdfUploads, semesters } from "@/lib/schema";
+import { getAdminFromRequest } from "@/lib/adminAuth";
+import { calcGPA, calcFGPA } from "@/lib/grades";
+import { eq, count, desc } from "drizzle-orm";
+
+// ─── GET /api/admin/dashboard/stats ─────────────────────────────────────────
+
+export async function GET(request: NextRequest) {
+  const admin = getAdminFromRequest(request);
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    // ── 1. Count totals ─────────────────────────────────────────────────
+    const [studentCount] = await db
+      .select({ value: count() })
+      .from(students);
+
+    const [subjectCount] = await db
+      .select({ value: count() })
+      .from(subjects);
+
+    const [resultCount] = await db
+      .select({ value: count() })
+      .from(results);
+
+    // ── 2. Recent uploads (last 5) ──────────────────────────────────────
+    const recentUploads = await db
+      .select({
+        id: pdfUploads.id,
+        filename: pdfUploads.filename,
+        status: pdfUploads.status,
+        processedCount: pdfUploads.processedCount,
+        createdAt: pdfUploads.createdAt,
+      })
+      .from(pdfUploads)
+      .orderBy(desc(pdfUploads.createdAt))
+      .limit(5);
+
+    // ── 3. Students at risk (FGPA < 2.00) ───────────────────────────────
+    // Fetch all results joined with subjects + semesters
+    const allResults = await db
+      .select({
+        studentIndex: results.studentIndex,
+        gradePoint: results.gradePoint,
+        creditPoints: subjects.creditPoints,
+        yearNumber: semesters.yearNumber,
+      })
+      .from(results)
+      .innerJoin(subjects, eq(results.subjectId, subjects.id))
+      .innerJoin(semesters, eq(subjects.semesterId, semesters.id));
+
+    // Group by student → year → compute FGPA
+    const studentMap = new Map<
+      string,
+      Map<number, { gp: number; cp: number }[]>
+    >();
+
+    for (const row of allResults) {
+      if (!studentMap.has(row.studentIndex)) {
+        studentMap.set(row.studentIndex, new Map());
+      }
+      const yearMap = studentMap.get(row.studentIndex)!;
+      if (!yearMap.has(row.yearNumber)) {
+        yearMap.set(row.yearNumber, []);
+      }
+      yearMap.get(row.yearNumber)!.push({
+        gp: Number(row.gradePoint),
+        cp: row.creditPoints,
+      });
+    }
+
+    let studentsAtRisk = 0;
+    studentMap.forEach((yearMap) => {
+      const yearGPAs: { year: number; gpa: number }[] = [];
+      yearMap.forEach((yearResults, year) => {
+        yearGPAs.push({ year, gpa: calcGPA(yearResults) });
+      });
+      const fgpa = calcFGPA(yearGPAs);
+      if (fgpa < 2.0) {
+        studentsAtRisk++;
+      }
+    });
+
+    return NextResponse.json({
+      totalStudents: studentCount.value,
+      totalSubjects: subjectCount.value,
+      totalResults: resultCount.value,
+      recentUploads,
+      studentsAtRisk,
+    });
+  } catch (error) {
+    console.error("GET /api/admin/dashboard/stats error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch dashboard stats" },
+      { status: 500 }
+    );
+  }
+}
