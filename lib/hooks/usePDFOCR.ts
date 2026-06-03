@@ -75,7 +75,7 @@ export function usePDFOCR() {
 
         if (response.ok) {
           const resData = await response.json();
-          if (resData.success && resData.method === "digital") {
+          if (resData.success && (resData.method === "digital" || resData.method === "gemini")) {
             const parsed = resData.data;
             setResult(parsed);
             setProgress({
@@ -83,7 +83,7 @@ export function usePDFOCR() {
               percent: 100,
               currentPage: 1,
               totalPages: 1,
-              statusMessage: `Success! Found ${parsed.totalFound} student results digitally.`,
+              statusMessage: `Success! Found ${parsed.totalFound} student results using ${resData.method} analysis.`,
             });
             skipOCR = true;
           }

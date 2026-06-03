@@ -31,7 +31,100 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Extract text digitally using pdf-parse
+    // ── 1. Try Google Gemini API (Multimodal Vision OCR) if Configured ─────────
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        console.log("Attempting Gemini API PDF parsing...");
+        const base64Data = buffer.toString("base64");
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+        const payload = {
+          contents: [
+            {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: "application/pdf",
+                    data: base64Data,
+                  },
+                },
+                {
+                  text: "Analyze this university result sheet PDF. Extract the subject code, subject name, semester description, and all student index numbers with their corresponding grades. Make sure to capture every single student result listed in the table or sheet. Ensure index numbers (e.g. 22CIS0123) and grades (e.g. A+, A, A-, B+, B, B-, C+, C, C-, D+, D, E, AB) are extracted with 100% accuracy. If you see a grade like 'B-' or 'A-', make sure you extract the '-' symbol and do not shorten it to 'B' or 'A'. Return a JSON object matching the schema.",
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                subjectCodeFromHeader: { type: "STRING" },
+                subjectNameFromHeader: { type: "STRING" },
+                semesterFromHeader: { type: "STRING" },
+                results: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      indexNumber: { type: "STRING" },
+                      grade: { type: "STRING" },
+                    },
+                    required: ["indexNumber", "grade"],
+                  },
+                },
+              },
+              required: ["results"],
+            },
+          },
+        };
+
+        const geminiRes = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const textResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textResponse) {
+            const parsedData = JSON.parse(textResponse);
+            // Standardize grades to uppercase and validate them
+            const validGrades = new Set([
+              "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "E", "AB"
+            ]);
+            const filteredResults = (parsedData.results || [])
+              .map((r: any) => ({
+                indexNumber: String(r.indexNumber).trim().toUpperCase(),
+                grade: String(r.grade).trim().toUpperCase(),
+              }))
+              .filter((r: any) => r.indexNumber && validGrades.has(r.grade));
+
+            console.log(`Gemini parsed successfully! Found ${filteredResults.length} results.`);
+            return NextResponse.json({
+              success: true,
+              method: "gemini",
+              data: {
+                subjectCodeFromHeader: parsedData.subjectCodeFromHeader || null,
+                subjectNameFromHeader: parsedData.subjectNameFromHeader || null,
+                semesterFromHeader: parsedData.semesterFromHeader || null,
+                results: filteredResults,
+                totalFound: filteredResults.length,
+              },
+            });
+          }
+        } else {
+          const errorText = await geminiRes.text();
+          console.error("Gemini API error response:", errorText);
+        }
+      } catch (geminiErr) {
+        console.error("Failed to run Gemini analysis:", geminiErr);
+      }
+    }
+
+    // ── 2. Fallback: Local Digital Text Extraction using pdf-parse ───────────
     let text = "";
     try {
       const pdfData = await pdf(buffer);
