@@ -5,6 +5,8 @@ import { results, subjects, semesters } from "@/lib/schema";
 import { getStudentFromRequest } from "@/lib/studentAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 
+export const dynamic = "force-dynamic";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface SubjectResult {

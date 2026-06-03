@@ -24,8 +24,9 @@ const INDEX_GRADE_REGEX =
 
 // ─── Subject Code + Name from Header ────────────────────────────────────────
 // Matches: "Code and Title of Paper : IS 2106 System Analysis & Design"
+// or "Code and Title of Paper : IS-EBP-3101 Business English"
 const SUBJECT_HEADER_REGEX =
-  /(?:Code\s+(?:and|&)\s+Title\s+of\s+Paper|Paper\s+Code\s*(?:and|&)\s*Title|Code\s*[-–—]\s*Title)\s*[:\-–—]?\s*([A-Z]{2,4}\s*\d{3,4})\s+([^\n\r]+)/i;
+  /(?:Code\s+(?:and|&)\s+Title\s+of\s+Paper|Paper\s+Code\s*(?:and|&)\s*Title|Code\s*[-–—]\s*Title)\s*[:\-–—]?\s*([A-Z]{2,4}(?:-[A-Z]+)?\s*[-–—]?\s*\d{3,4})\s+([^\n\r]+)/i;
 
 // ─── Semester from Header ───────────────────────────────────────────────────
 // Matches: "Semester II(Proper -CIS)" or "Semster I(Repeat - FIS)"
@@ -95,9 +96,9 @@ export function parseOCRText(rawText: string): ParsedSheet {
     subjectNameFromHeader = subjectMatch[2].trim();
   } else {
     // Fallback: search for paper code alone if full header match fails
-    const codeMatch = normalizedText.match(/\b([A-Z]{2,4})\s*(\d{3,4})\b/i);
+    const codeMatch = normalizedText.match(/\b([A-Z]{2,4}(?:-[A-Z]+)?\s*[-–—]?\s*\d{3,4})\b/i);
     if (codeMatch) {
-      subjectCodeFromHeader = `${codeMatch[1]}${codeMatch[2]}`.toUpperCase();
+      subjectCodeFromHeader = codeMatch[1].replace(/\s+/g, "").toUpperCase();
     }
   }
 

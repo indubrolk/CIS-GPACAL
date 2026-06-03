@@ -146,7 +146,8 @@ export default function StudentDetailPage() {
     async function fetchStudent() {
       try {
         const res = await fetch(
-          `/api/admin/students/${encodeURIComponent(indexNumber)}`
+          `/api/admin/students/${encodeURIComponent(indexNumber)}`,
+          { cache: "no-store" }
         );
         if (!res.ok) {
           if (res.status === 404) throw new Error("Student not found");

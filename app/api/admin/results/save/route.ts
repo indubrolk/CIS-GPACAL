@@ -131,7 +131,24 @@ export async function POST(request: NextRequest) {
       created = uniqueNewStudents.length;
     }
 
-    // ── 3. Batch-fetch existing results for this subject ────────────────
+    // ── 3. Log to pdf_uploads table (status: processing) ────────────────
+    let pdfUploadId: number | null = null;
+    try {
+      const [insertedUpload] = await db
+        .insert(pdfUploads)
+        .values({
+          filename: uploadMeta?.filename || "unknown.pdf",
+          adminId: admin.id,
+          status: "processing",
+          processedCount: 0,
+        })
+        .returning({ id: pdfUploads.id });
+      pdfUploadId = insertedUpload.id;
+    } catch (logErr) {
+      console.error("Failed to log PDF upload:", logErr);
+    }
+
+    // ── 4. Batch-fetch existing results for this subject ────────────────
     const existingResultRows = await db
       .select({
         id: results.id,
@@ -150,13 +167,14 @@ export async function POST(request: NextRequest) {
       existingResultRows.map((r) => [r.studentIndex, r])
     );
 
-    // ── 4. Process results: batch insert new, update existing ───────────
+    // ── 5. Process results: batch insert new, update existing ───────────
     const toInsert: {
       studentIndex: string;
       subjectId: number;
       grade: string;
       gradePoint: string;
       isRepeat: boolean;
+      pdfUploadId: number | null;
     }[] = [];
 
     for (const entry of validEntries) {
@@ -170,6 +188,7 @@ export async function POST(request: NextRequest) {
           grade: entry.grade,
           gradePoint: entry.gradePoint.toFixed(2),
           isRepeat: false,
+          pdfUploadId,
         });
         saved++;
       } else {
@@ -177,14 +196,15 @@ export async function POST(request: NextRequest) {
         const isNewPassing = entry.grade !== "E" && entry.grade !== "AB";
 
         if (isNewPassing) {
-          // Repeat pass: award C grade (2.00 GP) per university repeat rule
+          // Repeat pass: award C grade (2.00 GP) per university repeat rule (unless Non-GPA)
           try {
             await db
               .update(results)
               .set({
                 grade: entry.grade,
-                gradePoint: "2.00",
+                gradePoint: isGpaSubject ? "2.00" : "0.00",
                 isRepeat: true,
+                pdfUploadId,
               })
               .where(eq(results.id, existing.id));
             saved++;
@@ -225,17 +245,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── 5. Log to pdf_uploads table ─────────────────────────────────────
-    try {
-      await db.insert(pdfUploads).values({
-        filename: uploadMeta?.filename || "unknown.pdf",
-        adminId: admin.id,
-        status: "completed",
-        processedCount: saved,
-      });
-    } catch (logErr) {
-      console.error("Failed to log PDF upload:", logErr);
-      // Non-fatal — don't fail the whole request
+    // ── 6. Update status in pdf_uploads table ───────────────────────────
+    if (pdfUploadId) {
+      try {
+        await db
+          .update(pdfUploads)
+          .set({
+            status: "completed",
+            processedCount: saved,
+          })
+          .where(eq(pdfUploads.id, pdfUploadId));
+      } catch (updateUploadErr) {
+        console.error("Failed to update PDF upload status:", updateUploadErr);
+      }
     }
 
     return NextResponse.json({

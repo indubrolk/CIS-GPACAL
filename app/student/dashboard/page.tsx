@@ -234,7 +234,9 @@ export default function StudentDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/student/gpa");
+      const res = await fetch("/api/student/gpa", {
+        cache: "no-store",
+      });
       if (!res.ok) {
         if (res.status === 401) {
           router.push("/student/login");
@@ -361,6 +363,24 @@ export default function StudentDashboardPage() {
           </Card>
         ) : data ? (
           <>
+            {/* ── Page Header ────────────────────────────────────────── */}
+            <div className="flex items-center justify-between pb-2">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">Student Dashboard</h1>
+                <p className="text-slate-400 text-xs sm:text-sm mt-0.5">Your academic performance overview</p>
+              </div>
+              <Button
+                onClick={fetchGPA}
+                variant="outline"
+                size="sm"
+                className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                disabled={loading}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+
             {/* ── Hero GPA Card ──────────────────────────────────────── */}
             {hasResults ? (
               <Card
