@@ -4,6 +4,8 @@ import { subjects, semesters } from "@/lib/schema";
 import { verifyToken } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
 function getAdminFromRequest(request: NextRequest) {
@@ -18,10 +20,7 @@ function getAdminFromRequest(request: NextRequest) {
 // Returns all subjects joined with semester info.
 
 export async function GET(request: NextRequest) {
-  const admin = getAdminFromRequest(request);
-  if (!admin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // No admin verification needed for public subject lookup
 
   try {
     const rows = await db
@@ -69,7 +68,8 @@ export async function POST(request: NextRequest) {
       isGpa,
     } = body;
 
-    if (!rawCode || !subjectName || !creditPoints || !yearNumber || !semesterNumber) {
+    // creditPoints can be 0 for Non-GPA subjects — check for null/undefined explicitly
+    if (!rawCode || !subjectName || creditPoints == null || !yearNumber || !semesterNumber) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

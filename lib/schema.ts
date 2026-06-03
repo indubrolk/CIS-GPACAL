@@ -79,6 +79,8 @@ export const results = pgTable(
     grade: varchar("grade", { length: 5 }).notNull(),
     gradePoint: decimal("grade_point", { precision: 3, scale: 2 }).notNull(),
     isRepeat: boolean("is_repeat").notNull().default(false),
+    pdfUploadId: integer("pdf_upload_id")
+      .references(() => pdfUploads.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

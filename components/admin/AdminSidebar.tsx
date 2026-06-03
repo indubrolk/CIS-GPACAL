@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   LayoutDashboard,
   Upload,
@@ -87,7 +86,7 @@ export function AdminSidebar() {
           const active = isActive(link.href);
           const Icon = link.icon;
           return (
-            <Link
+            <a
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
@@ -113,7 +112,7 @@ export function AdminSidebar() {
               {active && (
                 <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
               )}
-            </Link>
+            </a>
           );
         })}
       </nav>

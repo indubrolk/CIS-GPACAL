@@ -70,7 +70,7 @@ export default function ChangePasswordPage() {
   useEffect(() => {
     async function checkFirstLogin() {
       try {
-        const res = await fetch("/api/student/gpa");
+        const res = await fetch("/api/student/gpa", { cache: "no-store" });
         if (res.ok) {
           // We don't need the full data; we just need to know we're authed
           // Check via a dedicated lightweight check if available, else default

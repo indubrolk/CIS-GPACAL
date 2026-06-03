@@ -5,6 +5,8 @@ import { getAdminFromRequest } from "@/lib/adminAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 import { eq } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 // ─── GET /api/admin/students/[index] ────────────────────────────────────────
 
 export async function GET(

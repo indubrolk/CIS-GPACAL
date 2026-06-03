@@ -6,6 +6,7 @@ import { Step1SubjectDetails } from "./Step1SubjectDetails";
 import { Step2UploadMD } from "./Step2UploadOCR";
 import { Step3ReviewEdit } from "./Step3ReviewEdit";
 import { Step4Success } from "./Step4Success";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { GRADE_POINTS } from "@/lib/grades";
 import type { ParsedSheet } from "@/lib/parseMD";
 
@@ -30,7 +31,7 @@ interface StudentRow {
 const INITIAL_FORM: SubjectFormData = {
   subjectCode: "",
   subjectName: "",
-  creditPoints: 0,
+  creditPoints: -1,   // -1 = "not yet selected"; 0 = Non-GPA subject with no credits
   yearNumber: 0,
   semesterNumber: 0,
   examType: "Proper",
@@ -129,56 +130,59 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">
-            📤 Upload Result Sheet
-          </h1>
-          <p className="text-slate-400">
-            Upload a markdown (.md) results file and save student grades
-          </p>
+      <AdminSidebar />
+      <main className="lg:ml-64 min-h-screen">
+        <div className="px-4 sm:px-6 lg:px-8 py-8 pt-16 lg:pt-8 max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-slate-100 mb-2">
+              📤 Upload Result Sheet
+            </h1>
+            <p className="text-slate-400">
+              Upload a markdown (.md) results file and save student grades
+            </p>
+          </div>
+
+          {/* Step Indicator */}
+          <StepIndicator current={step} />
+
+          {/* Step Content */}
+          {step === 1 && (
+            <Step1SubjectDetails
+              formData={formData}
+              setFormData={setFormData}
+              onNext={() => setStep(2)}
+            />
+          )}
+
+          {step === 2 && (
+            <Step2UploadMD onDone={handleMDDone} />
+          )}
+
+          {step === 3 && (
+            <Step3ReviewEdit
+              students={students}
+              setStudents={setStudents}
+              subjectCode={formData.subjectCode}
+              subjectName={formData.subjectName}
+              semesterLabel={semesterLabel}
+              examType={formData.examType}
+              isGpa={formData.isGpa}
+              onSave={handleSave}
+              saving={saving}
+            />
+          )}
+
+          {step === 4 && (
+            <Step4Success
+              saved={saveResult.saved}
+              created={saveResult.created}
+              skipped={saveResult.skipped}
+              onUploadAnother={handleUploadAnother}
+            />
+          )}
         </div>
-
-        {/* Step Indicator */}
-        <StepIndicator current={step} />
-
-        {/* Step Content */}
-        {step === 1 && (
-          <Step1SubjectDetails
-            formData={formData}
-            setFormData={setFormData}
-            onNext={() => setStep(2)}
-          />
-        )}
-
-        {step === 2 && (
-          <Step2UploadMD onDone={handleMDDone} />
-        )}
-
-        {step === 3 && (
-          <Step3ReviewEdit
-            students={students}
-            setStudents={setStudents}
-            subjectCode={formData.subjectCode}
-            subjectName={formData.subjectName}
-            semesterLabel={semesterLabel}
-            examType={formData.examType}
-            isGpa={formData.isGpa}
-            onSave={handleSave}
-            saving={saving}
-          />
-        )}
-
-        {step === 4 && (
-          <Step4Success
-            saved={saveResult.saved}
-            created={saveResult.created}
-            skipped={saveResult.skipped}
-            onUploadAnother={handleUploadAnother}
-          />
-        )}
-      </div>
+      </main>
     </div>
   );
 }

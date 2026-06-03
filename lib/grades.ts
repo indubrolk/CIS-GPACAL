@@ -51,16 +51,25 @@ export function calcGPA(
 
 /**
  * Calculate Final GPA (FGPA) from yearly GPAs.
- * FGPA = Y1×0.20 + Y2×0.20 + Y3×0.30 + Y4×0.30
+ * FGPA = (Y1×0.20 + Y2×0.20 + Y3×0.30 + Y4×0.30) / (sum of weights of completed years)
  */
 export function calcFGPA(
   yearGPAs: { year: number; gpa: number }[]
 ): number {
-  const fgpa = yearGPAs.reduce((sum, { year, gpa }) => {
-    const weight = YEAR_WEIGHTS[year] ?? 0;
-    return sum + gpa * weight;
-  }, 0);
+  if (yearGPAs.length === 0) return 0;
 
+  let totalWeight = 0;
+  let weightedSum = 0;
+
+  for (const { year, gpa } of yearGPAs) {
+    const weight = YEAR_WEIGHTS[year] ?? 0;
+    weightedSum += gpa * weight;
+    totalWeight += weight;
+  }
+
+  if (totalWeight === 0) return 0;
+
+  const fgpa = weightedSum / totalWeight;
   return Math.round(fgpa * 100) / 100;
 }
 
