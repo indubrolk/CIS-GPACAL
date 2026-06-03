@@ -52,7 +52,11 @@ export default function StudentLoginPage() {
           : "Redirecting to your dashboard…",
       });
 
-      router.push(data.redirect);
+      router.push(
+        data.isFirstLogin
+          ? "/student/change-password?first=true"
+          : data.redirect
+      );
     } catch {
       toast({
         variant: "destructive",
