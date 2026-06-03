@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const STEPS = [
   { num: 1, label: "Subject Details" },
-  { num: 2, label: "Upload & OCR" },
+  { num: 2, label: "Upload .md" },
   { num: 3, label: "Review & Edit" },
   { num: 4, label: "Success" },
 ];

@@ -58,6 +58,7 @@ export const subjects = pgTable("subjects", {
   subjectCode: varchar("subject_code", { length: 20 }).notNull(),
   subjectName: varchar("subject_name", { length: 200 }).notNull(),
   creditPoints: integer("credit_points").notNull(),
+  isGpa: boolean("is_gpa").notNull().default(true),
   semesterId: integer("semester_id")
     .notNull()
     .references(() => semesters.id, { onDelete: "cascade" }),

@@ -34,6 +34,7 @@ interface Step3Props {
   subjectName: string;
   semesterLabel: string;
   examType: string;
+  isGpa: boolean;
   onSave: () => void;
   saving: boolean;
 }
@@ -86,7 +87,7 @@ function GradeDistribution({ students }: { students: StudentRow[] }) {
 
 export function Step3ReviewEdit({
   students, setStudents, subjectCode, subjectName,
-  semesterLabel, examType, onSave, saving,
+  semesterLabel, examType, isGpa, onSave, saving,
 }: Step3Props) {
   const updateRow = (id: string, field: keyof StudentRow, value: string) => {
     setStudents(
@@ -134,6 +135,11 @@ export function Step3ReviewEdit({
           </Badge>
           <Badge className="bg-slate-700 text-slate-300">{semesterLabel}</Badge>
           <Badge className="bg-slate-700 text-slate-300">{examType}</Badge>
+          {!isGpa && (
+            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 border">
+              📋 Non-GPA
+            </Badge>
+          )}
         </div>
 
         {/* Editable Table */}
@@ -188,7 +194,7 @@ export function Step3ReviewEdit({
                     </TableCell>
                     <TableCell>
                       <span className="font-mono text-sm text-slate-300">
-                        {row.gradePoint.toFixed(2)}
+                        {isGpa ? row.gradePoint.toFixed(2) : "N/A"}
                       </span>
                     </TableCell>
                     <TableCell>

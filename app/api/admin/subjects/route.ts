@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         subjectCode: subjects.subjectCode,
         subjectName: subjects.subjectName,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         semesterId: subjects.semesterId,
         yearNumber: semesters.yearNumber,
         semesterNumber: semesters.semesterNumber,
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
       creditPoints,
       yearNumber,
       semesterNumber,
+      isGpa,
     } = body;
 
     if (!rawCode || !subjectName || !creditPoints || !yearNumber || !semesterNumber) {
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
         subjectCode: subjects.subjectCode,
         subjectName: subjects.subjectName,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         semesterId: subjects.semesterId,
         yearNumber: semesters.yearNumber,
         semesterNumber: semesters.semesterNumber,
@@ -130,6 +133,7 @@ export async function POST(request: NextRequest) {
         subjectCode,
         subjectName,
         creditPoints,
+        isGpa: isGpa !== undefined ? isGpa : true,
         semesterId,
       })
       .returning();

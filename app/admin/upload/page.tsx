@@ -3,11 +3,11 @@
 import { useState, useCallback } from "react";
 import { StepIndicator } from "./StepIndicator";
 import { Step1SubjectDetails } from "./Step1SubjectDetails";
-import { Step2UploadOCR } from "./Step2UploadOCR";
+import { Step2UploadMD } from "./Step2UploadOCR";
 import { Step3ReviewEdit } from "./Step3ReviewEdit";
 import { Step4Success } from "./Step4Success";
-import { usePDFOCR } from "@/lib/hooks/usePDFOCR";
 import { GRADE_POINTS } from "@/lib/grades";
+import type { ParsedSheet } from "@/lib/parseMD";
 
 interface SubjectFormData {
   subjectCode: string;
@@ -16,6 +16,7 @@ interface SubjectFormData {
   yearNumber: number;
   semesterNumber: number;
   examType: "Proper" | "Repeat";
+  isGpa: boolean;
   subjectId: number | null;
 }
 
@@ -33,6 +34,7 @@ const INITIAL_FORM: SubjectFormData = {
   yearNumber: 0,
   semesterNumber: 0,
   examType: "Proper",
+  isGpa: true,
   subjectId: null,
 };
 
@@ -44,26 +46,22 @@ export default function UploadPage() {
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState({ saved: 0, created: 0, skipped: 0 });
 
-  const { processFile, progress, result, error, reset: resetOCR } = usePDFOCR();
-
   const semesterLabel = `Year ${formData.yearNumber} Semester ${formData.semesterNumber}`;
 
-  // Step 2 → Step 3: convert OCR results to editable rows
-  const handleOCRDone = useCallback(
-    (file: File) => {
+  // Step 2 → Step 3: convert parsed MD results to editable rows
+  const handleMDDone = useCallback(
+    (file: File, parsed: ParsedSheet) => {
       setUploadedFile(file);
-      if (result) {
-        const rows: StudentRow[] = result.results.map((r, i) => ({
-          id: `ocr-${i}`,
-          indexNumber: r.indexNumber,
-          grade: r.grade,
-          gradePoint: GRADE_POINTS[r.grade] ?? 0,
-        }));
-        setStudents(rows);
-      }
+      const rows: StudentRow[] = parsed.results.map((r, i) => ({
+        id: `md-${i}`,
+        indexNumber: r.indexNumber,
+        grade: r.grade,
+        gradePoint: GRADE_POINTS[r.grade] ?? 0,
+      }));
+      setStudents(rows);
       setStep(3);
     },
-    [result]
+    []
   );
 
   // Step 3 → Step 4: save to server
@@ -83,6 +81,7 @@ export default function UploadPage() {
             creditPoints: formData.creditPoints,
             yearNumber: formData.yearNumber,
             semesterNumber: formData.semesterNumber,
+            isGpa: formData.isGpa,
           }),
         });
         if (!subRes.ok) throw new Error("Failed to create subject");
@@ -97,7 +96,7 @@ export default function UploadPage() {
         body: JSON.stringify({
           subjectId,
           uploadMeta: {
-            filename: uploadedFile?.name || "unknown.pdf",
+            filename: uploadedFile?.name || "unknown.md",
             semesterLabel,
           },
           students: students.map((s) => ({
@@ -107,8 +106,8 @@ export default function UploadPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save results");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save results");
       setSaveResult({ saved: data.saved, created: data.created, skipped: data.skipped });
       setStep(4);
     } catch (err) {
@@ -126,7 +125,6 @@ export default function UploadPage() {
     setUploadedFile(null);
     setSaving(false);
     setSaveResult({ saved: 0, created: 0, skipped: 0 });
-    resetOCR();
   };
 
   return (
@@ -138,7 +136,7 @@ export default function UploadPage() {
             📤 Upload Result Sheet
           </h1>
           <p className="text-slate-400">
-            Upload a scanned PDF result sheet and save student grades
+            Upload a markdown (.md) results file and save student grades
           </p>
         </div>
 
@@ -155,15 +153,7 @@ export default function UploadPage() {
         )}
 
         {step === 2 && (
-          <Step2UploadOCR
-            processFile={processFile}
-            progress={progress}
-            result={result}
-            error={error}
-            reset={resetOCR}
-            subjectCode={formData.subjectCode}
-            onDone={handleOCRDone}
-          />
+          <Step2UploadMD onDone={handleMDDone} />
         )}
 
         {step === 3 && (
@@ -174,6 +164,7 @@ export default function UploadPage() {
             subjectName={formData.subjectName}
             semesterLabel={semesterLabel}
             examType={formData.examType}
+            isGpa={formData.isGpa}
             onSave={handleSave}
             saving={saving}
           />
