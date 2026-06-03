@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { students, subjects, results, pdfUploads } from "@/lib/schema";
 import { verifyToken, getDefaultPasswordHash } from "@/lib/auth";
 import { GRADE_POINTS } from "@/lib/grades";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
@@ -56,83 +56,169 @@ export async function POST(request: NextRequest) {
     let skipped = 0;
     const errors: string[] = [];
 
+    // ── Validate all entries first ─────────────────────────────────────
+    const validEntries: { indexNumber: string; grade: string; gradePoint: number }[] = [];
     for (const entry of studentEntries) {
       const { indexNumber, grade } = entry;
+      const gradePoint = GRADE_POINTS[grade];
+      if (gradePoint === undefined) {
+        errors.push(`Invalid grade "${grade}" for ${indexNumber}`);
+        continue;
+      }
+      validEntries.push({ indexNumber, grade, gradePoint });
+    }
 
-      try {
-        // Compute grade point
-        const gradePoint = GRADE_POINTS[grade];
-        if (gradePoint === undefined) {
-          errors.push(`Invalid grade "${grade}" for ${indexNumber}`);
-          continue;
+    if (validEntries.length === 0) {
+      return NextResponse.json({ saved, created, skipped, errors });
+    }
+
+    const allIndexNumbers = validEntries.map((e) => e.indexNumber);
+
+    // ── 1. Batch-fetch existing students ────────────────────────────────
+    const existingStudentRows = await db
+      .select({ indexNumber: students.indexNumber })
+      .from(students)
+      .where(inArray(students.indexNumber, allIndexNumbers));
+
+    const existingStudentSet = new Set(
+      existingStudentRows.map((s) => s.indexNumber)
+    );
+
+    // ── 2. Batch-insert new students ────────────────────────────────────
+    const newStudentIndexes = allIndexNumbers.filter(
+      (idx) => !existingStudentSet.has(idx)
+    );
+
+    // Remove duplicates within the batch
+    const uniqueNewStudents = Array.from(new Set(newStudentIndexes));
+
+    if (uniqueNewStudents.length > 0) {
+      // Insert in chunks to avoid query size limits
+      const CHUNK_SIZE = 50;
+      for (let i = 0; i < uniqueNewStudents.length; i += CHUNK_SIZE) {
+        const chunk = uniqueNewStudents.slice(i, i + CHUNK_SIZE);
+        try {
+          await db.insert(students).values(
+            chunk.map((indexNumber) => ({
+              indexNumber,
+              passwordHash: defaultPasswordHash,
+              isFirstLogin: true,
+            }))
+          );
+        } catch (insertErr) {
+          // Handle race condition: some students may have been created concurrently
+          // Fall back to individual inserts for this chunk
+          for (const indexNumber of chunk) {
+            try {
+              await db.insert(students).values({
+                indexNumber,
+                passwordHash: defaultPasswordHash,
+                isFirstLogin: true,
+              });
+            } catch {
+              // Already exists — ignore
+            }
+          }
         }
+      }
+      created = uniqueNewStudents.length;
+    }
 
-        // ── 1. Upsert student ───────────────────────────────────────────
-        // Insert student with default password, skip if already exists
-        const existingStudents = await db
-          .select()
-          .from(students)
-          .where(eq(students.indexNumber, indexNumber))
-          .limit(1);
+    // ── 3. Batch-fetch existing results for this subject ────────────────
+    const existingResultRows = await db
+      .select({
+        id: results.id,
+        studentIndex: results.studentIndex,
+        grade: results.grade,
+      })
+      .from(results)
+      .where(
+        and(
+          inArray(results.studentIndex, allIndexNumbers),
+          eq(results.subjectId, subjectId)
+        )
+      );
 
-        if (existingStudents.length === 0) {
-          await db.insert(students).values({
-            indexNumber,
-            passwordHash: defaultPasswordHash,
-            isFirstLogin: true,
-          });
-          created++;
-        }
+    const existingResultMap = new Map(
+      existingResultRows.map((r) => [r.studentIndex, r])
+    );
 
-        // ── 2. Check for existing result for this student + subject ─────
-        const existingResults = await db
-          .select()
-          .from(results)
-          .where(
-            and(
-              eq(results.studentIndex, indexNumber),
-              eq(results.subjectId, subjectId)
-            )
-          )
-          .limit(1);
+    // ── 4. Process results: batch insert new, update existing ───────────
+    const toInsert: {
+      studentIndex: string;
+      subjectId: number;
+      grade: string;
+      gradePoint: string;
+      isRepeat: boolean;
+    }[] = [];
 
-        if (existingResults.length === 0) {
-          // No existing result: INSERT normally
-          await db.insert(results).values({
-            studentIndex: indexNumber,
-            subjectId,
-            grade,
-            gradePoint: gradePoint.toFixed(2),
-            isRepeat: false,
-          });
-          saved++;
-        } else {
-          // Existing result found
-          const isNewPassing = grade !== "E" && grade !== "AB";
+    for (const entry of validEntries) {
+      const existing = existingResultMap.get(entry.indexNumber);
 
-          if (isNewPassing) {
-            // Repeat pass: award C grade (2.00 GP) per university repeat rule
+      if (!existing) {
+        // New result — add to batch insert
+        toInsert.push({
+          studentIndex: entry.indexNumber,
+          subjectId,
+          grade: entry.grade,
+          gradePoint: entry.gradePoint.toFixed(2),
+          isRepeat: false,
+        });
+        saved++;
+      } else {
+        // Existing result — handle repeat logic
+        const isNewPassing = entry.grade !== "E" && entry.grade !== "AB";
+
+        if (isNewPassing) {
+          // Repeat pass: award C grade (2.00 GP) per university repeat rule
+          try {
             await db
               .update(results)
               .set({
-                grade,
+                grade: entry.grade,
                 gradePoint: "2.00",
                 isRepeat: true,
               })
-              .where(eq(results.id, existingResults[0].id));
+              .where(eq(results.id, existing.id));
             saved++;
-          } else {
-            // New grade is E or AB: skip, keep old record
-            skipped++;
+          } catch (updateErr) {
+            const msg =
+              updateErr instanceof Error ? updateErr.message : "Unknown error";
+            errors.push(`Error updating ${entry.indexNumber}: ${msg}`);
           }
+        } else {
+          // New grade is E or AB: skip, keep old record
+          skipped++;
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        errors.push(`Error processing ${indexNumber}: ${msg}`);
       }
     }
 
-    // ── 3. Log to pdf_uploads table ─────────────────────────────────────
+    // Batch insert new results in chunks
+    if (toInsert.length > 0) {
+      const CHUNK_SIZE = 50;
+      for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+        const chunk = toInsert.slice(i, i + CHUNK_SIZE);
+        try {
+          await db.insert(results).values(chunk);
+        } catch (insertErr) {
+          // Fall back to individual inserts for this chunk
+          for (const row of chunk) {
+            try {
+              await db.insert(results).values(row);
+            } catch (singleErr) {
+              const msg =
+                singleErr instanceof Error
+                  ? singleErr.message
+                  : "Unknown error";
+              errors.push(`Error saving result for ${row.studentIndex}: ${msg}`);
+              saved--; // Undo the pre-counted save
+            }
+          }
+        }
+      }
+    }
+
+    // ── 5. Log to pdf_uploads table ─────────────────────────────────────
     try {
       await db.insert(pdfUploads).values({
         filename: uploadMeta?.filename || "unknown.pdf",
@@ -153,8 +239,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("POST /api/admin/results/save error:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to save results";
     return NextResponse.json(
-      { error: "Failed to save results" },
+      { error: `Failed to save results: ${message}` },
       { status: 500 }
     );
   }

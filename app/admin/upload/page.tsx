@@ -103,8 +103,8 @@ export default function UploadPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save results");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save results");
       setSaveResult({ saved: data.saved, created: data.created, skipped: data.skipped });
       setStep(4);
     } catch (err) {
