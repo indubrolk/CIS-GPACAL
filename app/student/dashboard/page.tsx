@@ -55,6 +55,7 @@ interface SubjectResult {
   grade: string;
   gradePoint: number;
   isRepeat: boolean;
+  isGpa: boolean;
   weightedGP: number;
 }
 
@@ -588,16 +589,23 @@ export default function StudentDashboardPage() {
                                       {sem.subjects.map((subj, idx) => (
                                         <TableRow
                                           key={idx}
-                                          className="border-slate-700/20 hover:bg-slate-800/30"
+                                          className={`border-slate-700/20 hover:bg-slate-800/30 ${!subj.isGpa ? "opacity-75" : ""}`}
                                         >
                                           <TableCell className="py-2.5">
                                             <div>
                                               <span className="text-sm text-white">
                                                 {subj.subjectName}
                                               </span>
-                                              <span className="block text-[11px] text-slate-500 font-mono">
-                                                {subj.subjectCode}
-                                              </span>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="text-[11px] text-slate-500 font-mono">
+                                                  {subj.subjectCode}
+                                                </span>
+                                                {!subj.isGpa && (
+                                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-semibold uppercase tracking-wider">
+                                                    Non-GPA
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5">
@@ -615,7 +623,7 @@ export default function StudentDashboardPage() {
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5 text-sm text-slate-300 font-mono">
-                                            {subj.gradePoint.toFixed(2)}
+                                            {subj.isGpa ? subj.gradePoint.toFixed(2) : "—"}
                                           </TableCell>
                                           <TableCell className="text-center py-2.5 text-sm text-slate-400">
                                             {subj.creditPoints}

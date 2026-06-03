@@ -16,6 +16,7 @@ interface SubjectFormData {
   yearNumber: number;
   semesterNumber: number;
   examType: "Proper" | "Repeat";
+  isGpa: boolean;
   subjectId: number | null;
 }
 
@@ -33,6 +34,7 @@ const INITIAL_FORM: SubjectFormData = {
   yearNumber: 0,
   semesterNumber: 0,
   examType: "Proper",
+  isGpa: true,
   subjectId: null,
 };
 
@@ -79,6 +81,7 @@ export default function UploadPage() {
             creditPoints: formData.creditPoints,
             yearNumber: formData.yearNumber,
             semesterNumber: formData.semesterNumber,
+            isGpa: formData.isGpa,
           }),
         });
         if (!subRes.ok) throw new Error("Failed to create subject");
@@ -161,6 +164,7 @@ export default function UploadPage() {
             subjectName={formData.subjectName}
             semesterLabel={semesterLabel}
             examType={formData.examType}
+            isGpa={formData.isGpa}
             onSave={handleSave}
             saving={saving}
           />

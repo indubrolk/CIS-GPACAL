@@ -25,6 +25,7 @@ export async function GET(
         subjectCode: subjects.subjectCode,
         subjectName: subjects.subjectName,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         grade: results.grade,
         gradePoint: results.gradePoint,
         isRepeat: results.isRepeat,
@@ -58,6 +59,7 @@ export async function GET(
             grade: string;
             gradePoint: number;
             isRepeat: boolean;
+            isGpa: boolean;
             weightedGP: number;
           }[];
         }
@@ -89,7 +91,8 @@ export async function GET(
         grade: row.grade,
         gradePoint: gp,
         isRepeat: row.isRepeat,
-        weightedGP: Math.round(gp * row.creditPoints * 100) / 100,
+        isGpa: row.isGpa,
+        weightedGP: row.isGpa ? Math.round(gp * row.creditPoints * 100) / 100 : 0,
       });
     }
 
@@ -105,7 +108,9 @@ export async function GET(
         const semesters = Array.from(semMap.entries())
           .sort(([a], [b]) => a - b)
           .map(([semesterNumber, semData]) => {
-            const semResults = semData.subjects.map((s) => ({
+            // Only include GPA subjects in GPA calculation
+            const gpaSubjects = semData.subjects.filter((s) => s.isGpa);
+            const semResults = gpaSubjects.map((s) => ({
               gp: s.gradePoint,
               cp: s.creditPoints,
             }));

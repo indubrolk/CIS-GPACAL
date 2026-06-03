@@ -15,6 +15,7 @@ interface SubjectFormData {
   yearNumber: number;
   semesterNumber: number;
   examType: "Proper" | "Repeat";
+  isGpa: boolean;
   subjectId: number | null;
 }
 
@@ -56,6 +57,7 @@ export function Step1SubjectDetails({ formData, setFormData, onNext }: Step1Prop
           creditPoints: match.creditPoints,
           yearNumber: match.yearNumber,
           semesterNumber: match.semesterNumber,
+          isGpa: match.isGpa ?? true,
           subjectId: match.id,
         });
       } else {
@@ -181,6 +183,47 @@ export function Step1SubjectDetails({ formData, setFormData, onNext }: Step1Prop
                 <span className="text-slate-300">{type}</span>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Subject Type (GPA / Non-GPA) */}
+        <div className="space-y-2">
+          <Label className="text-slate-300">Subject Type</Label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, isGpa: true })}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium text-sm transition-all duration-200 ${
+                formData.isGpa
+                  ? "border-blue-500 bg-blue-500/15 text-blue-300 shadow-lg shadow-blue-500/10"
+                  : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              <span className="text-lg">📊</span>
+              <div className="text-left">
+                <div>GPA Subject</div>
+                <div className={`text-[10px] font-normal ${
+                  formData.isGpa ? "text-blue-400/70" : "text-slate-500"
+                }`}>Counts toward GPA</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, isGpa: false })}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 font-medium text-sm transition-all duration-200 ${
+                !formData.isGpa
+                  ? "border-amber-500 bg-amber-500/15 text-amber-300 shadow-lg shadow-amber-500/10"
+                  : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              <span className="text-lg">📋</span>
+              <div className="text-left">
+                <div>Non-GPA Subject</div>
+                <div className={`text-[10px] font-normal ${
+                  !formData.isGpa ? "text-amber-400/70" : "text-slate-500"
+                }`}>Does NOT count toward GPA</div>
+              </div>
+            </button>
           </div>
         </div>
 

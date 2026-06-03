@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isGpaSubject = subjectRows[0].isGpa;
+
     // Pre-hash the default password once
     const defaultPasswordHash = await getDefaultPasswordHash();
 
@@ -65,7 +67,12 @@ export async function POST(request: NextRequest) {
         errors.push(`Invalid grade "${grade}" for ${indexNumber}`);
         continue;
       }
-      validEntries.push({ indexNumber, grade, gradePoint });
+      // For non-GPA subjects, store 0.00 grade point
+      validEntries.push({
+        indexNumber,
+        grade,
+        gradePoint: isGpaSubject ? gradePoint : 0,
+      });
     }
 
     if (validEntries.length === 0) {
