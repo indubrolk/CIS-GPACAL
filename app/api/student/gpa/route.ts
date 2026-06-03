@@ -5,6 +5,84 @@ import { results, subjects, semesters } from "@/lib/schema";
 import { getStudentFromRequest } from "@/lib/studentAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface SubjectResult {
+  subjectCode: string;
+  subjectName: string;
+  creditPoints: number;
+  grade: string;
+  gradePoint: number;
+  isRepeat: boolean;
+  weightedGP: number;
+}
+
+interface SemesterData {
+  semesterNumber: number;
+  semesterLabel: string;
+  semesterGPA: number;
+  subjects: SubjectResult[];
+}
+
+interface YearData {
+  yearNumber: number;
+  yearGPA: number;
+  semesters: SemesterData[];
+}
+
+// ─── Recommendation Generator ───────────────────────────────────────────────
+
+function generateRecommendations(
+  allSubjects: { grade: string; subjectCode: string }[],
+  fgpa: number,
+  hasResults: boolean
+): string[] {
+  const recommendations: string[] = [];
+
+  // No results at all
+  if (!hasResults) {
+    return ["📋 No results have been uploaded yet. Check back later."];
+  }
+
+  // Failed subjects (E or AB)
+  const failedSubjects = allSubjects.filter(
+    (s) => s.grade === "E" || s.grade === "AB"
+  );
+  for (const s of failedSubjects) {
+    recommendations.push(
+      `⚠️ You have a failed subject (${s.subjectCode}). Consider applying for a repeat examination.`
+    );
+  }
+
+  // FGPA-based recommendations
+  if (fgpa < 2.0) {
+    recommendations.push(
+      "🚨 Your FGPA is below the minimum 2.00. Improving is required to be eligible for a degree certificate."
+    );
+  } else if (fgpa < 2.7) {
+    const needed = Math.round((2.7 - fgpa) * 100) / 100;
+    recommendations.push(
+      `📈 You are in Pass territory. You need ${needed.toFixed(2)} more points to reach Second Class (Lower Division).`
+    );
+  } else if (fgpa < 3.3) {
+    const needed = Math.round((3.3 - fgpa) * 100) / 100;
+    recommendations.push(
+      `📘 You are in Second Class (Lower Division). ${needed.toFixed(2)} more points gets you to Upper Division.`
+    );
+  } else if (fgpa < 3.7) {
+    const needed = Math.round((3.7 - fgpa) * 100) / 100;
+    recommendations.push(
+      `⭐ You are in Second Class (Upper Division). Only ${needed.toFixed(2)} more points to First Class!`
+    );
+  } else {
+    recommendations.push(
+      "🏆 Outstanding! You are on track for First Class Honours. Keep up the excellent work!"
+    );
+  }
+
+  return recommendations;
+}
+
 // ─── GET /api/student/gpa ───────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -24,8 +102,10 @@ export async function GET(request: NextRequest) {
         creditPoints: subjects.creditPoints,
         grade: results.grade,
         gradePoint: results.gradePoint,
+        isRepeat: results.isRepeat,
         yearNumber: semesters.yearNumber,
         semesterNumber: semesters.semesterNumber,
+        semesterLabel: semesters.label,
       })
       .from(results)
       .innerJoin(subjects, eq(results.subjectId, subjects.id))
@@ -37,8 +117,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         indexNumber,
         fgpa: 0,
-        class: "N/A",
+        degreeClass: "N/A",
         isPassed: false,
+        totalSubjects: 0,
+        totalCredits: 0,
+        bestSemesterGPA: 0,
+        recommendations: generateRecommendations([], 0, false),
         years: [],
       });
     }
@@ -49,12 +133,16 @@ export async function GET(request: NextRequest) {
       Map<
         number,
         {
-          name: string;
-          code: string;
-          grade: string;
-          gradePoint: number;
-          credits: number;
-        }[]
+          label: string;
+          subjects: {
+            subjectCode: string;
+            subjectName: string;
+            creditPoints: number;
+            grade: string;
+            gradePoint: number;
+            isRepeat: boolean;
+          }[];
+        }
       >
     >();
 
@@ -64,42 +152,74 @@ export async function GET(request: NextRequest) {
       }
       const semMap = yearMap.get(row.yearNumber)!;
       if (!semMap.has(row.semesterNumber)) {
-        semMap.set(row.semesterNumber, []);
+        semMap.set(row.semesterNumber, {
+          label: row.semesterLabel,
+          subjects: [],
+        });
       }
-      semMap.get(row.semesterNumber)!.push({
-        name: row.subjectName,
-        code: row.subjectCode,
+      semMap.get(row.semesterNumber)!.subjects.push({
+        subjectCode: row.subjectCode,
+        subjectName: row.subjectName,
+        creditPoints: row.creditPoints,
         grade: row.grade,
         gradePoint: Number(row.gradePoint),
-        credits: row.creditPoints,
+        isRepeat: row.isRepeat,
       });
     }
 
     // ── Build the structured response ───────────────────────────────────
     const yearGPAs: { year: number; gpa: number }[] = [];
+    let totalSubjects = 0;
+    let totalCredits = 0;
+    let bestSemesterGPA = 0;
 
-    const years = Array.from(yearMap.entries())
+    const years: YearData[] = Array.from(yearMap.entries())
       .sort(([a], [b]) => a - b)
       .map(([yearNumber, semMap]) => {
-        // Build semesters for this year
-        const semesterEntries = Array.from(semMap.entries())
+        const semesterEntries: SemesterData[] = Array.from(semMap.entries())
           .sort(([a], [b]) => a - b)
-          .map(([semesterNumber, subjectList]) => {
+          .map(([semesterNumber, semData]) => {
             const semesterGPA = calcGPA(
-              subjectList.map((s) => ({ gp: s.gradePoint, cp: s.credits }))
+              semData.subjects.map((s) => ({
+                gp: s.gradePoint,
+                cp: s.creditPoints,
+              }))
+            );
+
+            if (semesterGPA > bestSemesterGPA) {
+              bestSemesterGPA = semesterGPA;
+            }
+
+            totalSubjects += semData.subjects.length;
+            totalCredits += semData.subjects.reduce(
+              (sum, s) => sum + s.creditPoints,
+              0
             );
 
             return {
               semesterNumber,
+              semesterLabel: semData.label,
               semesterGPA,
-              subjects: subjectList,
+              subjects: semData.subjects.map((s) => ({
+                subjectCode: s.subjectCode,
+                subjectName: s.subjectName,
+                creditPoints: s.creditPoints,
+                grade: s.grade,
+                gradePoint: s.gradePoint,
+                isRepeat: s.isRepeat,
+                weightedGP:
+                  Math.round(s.gradePoint * s.creditPoints * 100) / 100,
+              })),
             };
           });
 
         // Year GPA = GPA across all subjects in all semesters of this year
         const allYearSubjects = semesterEntries.flatMap((s) => s.subjects);
         const yearGPA = calcGPA(
-          allYearSubjects.map((s) => ({ gp: s.gradePoint, cp: s.credits }))
+          allYearSubjects.map((s) => ({
+            gp: s.gradePoint,
+            cp: s.creditPoints,
+          }))
         );
 
         yearGPAs.push({ year: yearNumber, gpa: yearGPA });
@@ -119,11 +239,26 @@ export async function GET(request: NextRequest) {
       fgpa
     );
 
+    // ── Generate recommendations ────────────────────────────────────────
+    const allSubjectsFlat = rows.map((r) => ({
+      grade: r.grade,
+      subjectCode: r.subjectCode,
+    }));
+    const recommendations = generateRecommendations(
+      allSubjectsFlat,
+      fgpa,
+      true
+    );
+
     return NextResponse.json({
       indexNumber,
       fgpa,
-      class: degreeClass,
+      degreeClass,
       isPassed: passed,
+      totalSubjects,
+      totalCredits,
+      bestSemesterGPA,
+      recommendations,
       years,
     });
   } catch (error) {
