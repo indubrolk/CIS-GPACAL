@@ -190,7 +190,7 @@ export function Step1SubjectDetails({ formData, setFormData, onNext }: Step1Prop
           disabled={!allFilled}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-4"
         >
-          Next: Upload PDF →
+          Next: Upload Results →
         </Button>
       </CardContent>
     </Card>
