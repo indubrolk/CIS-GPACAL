@@ -54,13 +54,53 @@ export function usePDFOCR() {
     setError(null);
 
     try {
-      // ── Step 1: Load PDF ────────────────────────────────────────────────
+      // ── Step 1: Try Fast Server-Side Digital Extraction ──────────────────
       setProgress({
         status: "loading_pdf",
-        percent: 0,
+        percent: 15,
         currentPage: 0,
         totalPages: 0,
-        statusMessage: "Loading PDF...",
+        statusMessage: "Attempting digital text extraction...",
+      });
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      let skipOCR = false;
+      try {
+        const response = await fetch("/api/admin/results/analyze", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.success && resData.method === "digital") {
+            const parsed = resData.data;
+            setResult(parsed);
+            setProgress({
+              status: "done",
+              percent: 100,
+              currentPage: 1,
+              totalPages: 1,
+              statusMessage: `Success! Found ${parsed.totalFound} student results digitally.`,
+            });
+            skipOCR = true;
+          }
+        }
+      } catch (apiErr) {
+        console.warn("Digital analysis API failed, falling back to OCR:", apiErr);
+      }
+
+      if (skipOCR) return;
+
+      // ── Step 2: Fallback to Client-Side OCR ────────────────────────────────
+      setProgress({
+        status: "loading_pdf",
+        percent: 30,
+        currentPage: 0,
+        totalPages: 0,
+        statusMessage: "No digital text. Running OCR scan...",
       });
 
       // Dynamic import pdfjs-dist (client-side only)
@@ -75,8 +115,8 @@ export function usePDFOCR() {
       let allText = "";
 
       for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-        // ── Step 2: Render page to canvas ───────────────────────────────
-        const renderPercent = Math.round((pageNum - 1) / totalPages * 50);
+        // ── Step 3: Render page to canvas ───────────────────────────────
+        const renderPercent = 30 + Math.round((pageNum - 1) / totalPages * 30);
         setProgress({
           status: "rendering",
           percent: renderPercent,
@@ -97,8 +137,8 @@ export function usePDFOCR() {
 
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        // ── Step 3: OCR the rendered page ───────────────────────────────
-        const ocrPercent = 50 + Math.round((pageNum - 1) / totalPages * 40);
+        // ── Step 4: OCR the rendered page ───────────────────────────────
+        const ocrPercent = 60 + Math.round((pageNum - 1) / totalPages * 30);
         setProgress({
           status: "ocr_page",
           percent: ocrPercent,
@@ -119,10 +159,10 @@ export function usePDFOCR() {
         canvas.height = 0;
       }
 
-      // ── Step 4: Parse extracted text ──────────────────────────────────
+      // ── Step 5: Parse extracted text ──────────────────────────────────
       setProgress({
         status: "parsing",
-        percent: 90,
+        percent: 95,
         currentPage: totalPages,
         totalPages,
         statusMessage: "Extracting student results...",
@@ -146,7 +186,7 @@ export function usePDFOCR() {
         percent: 0,
         currentPage: 0,
         totalPages: 0,
-        statusMessage: `OCR failed: ${message}`,
+        statusMessage: `Analysis failed: ${message}`,
       });
     } finally {
       processingRef.current = false;
