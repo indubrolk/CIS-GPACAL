@@ -5,6 +5,8 @@ import { getAdminFromRequest } from "@/lib/adminAuth";
 import { calcGPA, calcFGPA } from "@/lib/grades";
 import { eq, count, desc } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 // ─── GET /api/admin/dashboard/stats ─────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -42,24 +44,29 @@ export async function GET(request: NextRequest) {
 
     // ── 3. Students at risk (FGPA < 2.00) ───────────────────────────────
     // Fetch all results joined with subjects + semesters
+    // Include isGpa to exclude non-GPA subjects from FGPA calculation
     const allResults = await db
       .select({
         studentIndex: results.studentIndex,
         gradePoint: results.gradePoint,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         yearNumber: semesters.yearNumber,
       })
       .from(results)
       .innerJoin(subjects, eq(results.subjectId, subjects.id))
       .innerJoin(semesters, eq(subjects.semesterId, semesters.id));
 
-    // Group by student → year → compute FGPA
+    // Group by student → year → compute FGPA (only GPA subjects)
     const studentMap = new Map<
       string,
       Map<number, { gp: number; cp: number }[]>
     >();
 
     for (const row of allResults) {
+      // Skip non-GPA subjects — they must not affect FGPA
+      if (!row.isGpa) continue;
+
       if (!studentMap.has(row.studentIndex)) {
         studentMap.set(row.studentIndex, new Map());
       }

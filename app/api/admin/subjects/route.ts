@@ -4,6 +4,8 @@ import { subjects, semesters } from "@/lib/schema";
 import { verifyToken } from "@/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
 function getAdminFromRequest(request: NextRequest) {
@@ -18,10 +20,7 @@ function getAdminFromRequest(request: NextRequest) {
 // Returns all subjects joined with semester info.
 
 export async function GET(request: NextRequest) {
-  const admin = getAdminFromRequest(request);
-  if (!admin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // No admin verification needed for public subject lookup
 
   try {
     const rows = await db
@@ -30,6 +29,7 @@ export async function GET(request: NextRequest) {
         subjectCode: subjects.subjectCode,
         subjectName: subjects.subjectName,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         semesterId: subjects.semesterId,
         yearNumber: semesters.yearNumber,
         semesterNumber: semesters.semesterNumber,
@@ -65,9 +65,11 @@ export async function POST(request: NextRequest) {
       creditPoints,
       yearNumber,
       semesterNumber,
+      isGpa,
     } = body;
 
-    if (!rawCode || !subjectName || !creditPoints || !yearNumber || !semesterNumber) {
+    // creditPoints can be 0 for Non-GPA subjects — check for null/undefined explicitly
+    if (!rawCode || !subjectName || creditPoints == null || !yearNumber || !semesterNumber) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
         subjectCode: subjects.subjectCode,
         subjectName: subjects.subjectName,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         semesterId: subjects.semesterId,
         yearNumber: semesters.yearNumber,
         semesterNumber: semesters.semesterNumber,
@@ -130,6 +133,7 @@ export async function POST(request: NextRequest) {
         subjectCode,
         subjectName,
         creditPoints,
+        isGpa: isGpa !== undefined ? isGpa : true,
         semesterId,
       })
       .returning();

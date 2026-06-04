@@ -55,6 +55,7 @@ interface SubjectResult {
   grade: string;
   gradePoint: number;
   isRepeat: boolean;
+  isGpa: boolean;
   weightedGP: number;
 }
 
@@ -233,7 +234,9 @@ export default function StudentDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/student/gpa");
+      const res = await fetch("/api/student/gpa", {
+        cache: "no-store",
+      });
       if (!res.ok) {
         if (res.status === 401) {
           router.push("/student/login");
@@ -360,6 +363,24 @@ export default function StudentDashboardPage() {
           </Card>
         ) : data ? (
           <>
+            {/* ── Page Header ────────────────────────────────────────── */}
+            <div className="flex items-center justify-between pb-2">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">Student Dashboard</h1>
+                <p className="text-slate-400 text-xs sm:text-sm mt-0.5">Your academic performance overview</p>
+              </div>
+              <Button
+                onClick={fetchGPA}
+                variant="outline"
+                size="sm"
+                className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                disabled={loading}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+
             {/* ── Hero GPA Card ──────────────────────────────────────── */}
             {hasResults ? (
               <Card
@@ -588,16 +609,23 @@ export default function StudentDashboardPage() {
                                       {sem.subjects.map((subj, idx) => (
                                         <TableRow
                                           key={idx}
-                                          className="border-slate-700/20 hover:bg-slate-800/30"
+                                          className={`border-slate-700/20 hover:bg-slate-800/30 ${!subj.isGpa ? "opacity-75" : ""}`}
                                         >
                                           <TableCell className="py-2.5">
                                             <div>
                                               <span className="text-sm text-white">
                                                 {subj.subjectName}
                                               </span>
-                                              <span className="block text-[11px] text-slate-500 font-mono">
-                                                {subj.subjectCode}
-                                              </span>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="text-[11px] text-slate-500 font-mono">
+                                                  {subj.subjectCode}
+                                                </span>
+                                                {!subj.isGpa && (
+                                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-semibold uppercase tracking-wider">
+                                                    Non-GPA
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5">
@@ -615,7 +643,7 @@ export default function StudentDashboardPage() {
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5 text-sm text-slate-300 font-mono">
-                                            {subj.gradePoint.toFixed(2)}
+                                            {subj.isGpa ? subj.gradePoint.toFixed(2) : "—"}
                                           </TableCell>
                                           <TableCell className="text-center py-2.5 text-sm text-slate-400">
                                             {subj.creditPoints}

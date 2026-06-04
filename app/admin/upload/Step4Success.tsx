@@ -40,7 +40,7 @@ export function Step4Success({ saved, created, skipped, onUploadAnother }: Step4
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex flex-wrap gap-4 pt-4 justify-center">
           <Button
             onClick={onUploadAnother}
             className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -53,6 +53,13 @@ export function Step4Success({ saved, created, skipped, onUploadAnother }: Step4
             onClick={() => (window.location.href = "/admin/students")}
           >
             View Students
+          </Button>
+          <Button
+            variant="outline"
+            className="border-slate-700 text-slate-300"
+            onClick={() => (window.location.href = "/admin/dashboard")}
+          >
+            Go to Dashboard
           </Button>
         </div>
       </CardContent>

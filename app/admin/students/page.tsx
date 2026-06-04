@@ -11,6 +11,7 @@ import {
   Loader2,
   Users,
   Filter,
+  RefreshCw,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -135,7 +136,9 @@ function StudentsPageContent() {
       params.set("page", page.toString());
       params.set("limit", "20");
 
-      const res = await fetch(`/api/admin/students?${params.toString()}`);
+      const res = await fetch(`/api/admin/students?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Failed to fetch students");
       const data: StudentsResponse = await res.json();
 
@@ -161,11 +164,21 @@ function StudentsPageContent() {
   return (
     <>
       {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Students</h1>
-        <p className="text-slate-400 mt-1 text-sm">
-          Browse and manage student records
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Students</h1>
+          <p className="text-slate-400 mt-1 text-sm">
+            Browse and manage student records
+          </p>
+        </div>
+        <button
+          onClick={fetchStudents}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-300 hover:text-white text-xs font-medium transition-all"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
 
       {/* ── Search & Filters ──────────────────────────────────────── */}

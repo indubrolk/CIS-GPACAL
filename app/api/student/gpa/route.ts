@@ -5,6 +5,8 @@ import { results, subjects, semesters } from "@/lib/schema";
 import { getStudentFromRequest } from "@/lib/studentAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 
+export const dynamic = "force-dynamic";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface SubjectResult {
@@ -14,6 +16,7 @@ interface SubjectResult {
   grade: string;
   gradePoint: number;
   isRepeat: boolean;
+  isGpa: boolean;
   weightedGP: number;
 }
 
@@ -100,6 +103,7 @@ export async function GET(request: NextRequest) {
         subjectName: subjects.subjectName,
         subjectCode: subjects.subjectCode,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         grade: results.grade,
         gradePoint: results.gradePoint,
         isRepeat: results.isRepeat,
@@ -141,6 +145,7 @@ export async function GET(request: NextRequest) {
             grade: string;
             gradePoint: number;
             isRepeat: boolean;
+            isGpa: boolean;
           }[];
         }
       >
@@ -164,6 +169,7 @@ export async function GET(request: NextRequest) {
         grade: row.grade,
         gradePoint: Number(row.gradePoint),
         isRepeat: row.isRepeat,
+        isGpa: row.isGpa,
       });
     }
 
@@ -179,8 +185,10 @@ export async function GET(request: NextRequest) {
         const semesterEntries: SemesterData[] = Array.from(semMap.entries())
           .sort(([a], [b]) => a - b)
           .map(([semesterNumber, semData]) => {
+            // Only include GPA subjects in GPA calculation
+            const gpaSubjects = semData.subjects.filter((s) => s.isGpa);
             const semesterGPA = calcGPA(
-              semData.subjects.map((s) => ({
+              gpaSubjects.map((s) => ({
                 gp: s.gradePoint,
                 cp: s.creditPoints,
               }))
@@ -191,7 +199,8 @@ export async function GET(request: NextRequest) {
             }
 
             totalSubjects += semData.subjects.length;
-            totalCredits += semData.subjects.reduce(
+            // Only count GPA subject credits toward totalCredits
+            totalCredits += gpaSubjects.reduce(
               (sum, s) => sum + s.creditPoints,
               0
             );
@@ -207,16 +216,20 @@ export async function GET(request: NextRequest) {
                 grade: s.grade,
                 gradePoint: s.gradePoint,
                 isRepeat: s.isRepeat,
-                weightedGP:
-                  Math.round(s.gradePoint * s.creditPoints * 100) / 100,
+                isGpa: s.isGpa,
+                weightedGP: s.isGpa
+                  ? Math.round(s.gradePoint * s.creditPoints * 100) / 100
+                  : 0,
               })),
             };
           });
 
-        // Year GPA = GPA across all subjects in all semesters of this year
-        const allYearSubjects = semesterEntries.flatMap((s) => s.subjects);
+        // Year GPA = GPA across all GPA subjects in all semesters of this year
+        const allYearGpaSubjects = semesterEntries
+          .flatMap((s) => s.subjects)
+          .filter((s) => s.isGpa);
         const yearGPA = calcGPA(
-          allYearSubjects.map((s) => ({
+          allYearGpaSubjects.map((s) => ({
             gp: s.gradePoint,
             cp: s.creditPoints,
           }))

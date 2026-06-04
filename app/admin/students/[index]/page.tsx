@@ -20,6 +20,7 @@ interface SubjectRecord {
   grade: string;
   gradePoint: number;
   isRepeat: boolean;
+  isGpa: boolean;
   weightedGP: number;
 }
 
@@ -145,7 +146,8 @@ export default function StudentDetailPage() {
     async function fetchStudent() {
       try {
         const res = await fetch(
-          `/api/admin/students/${encodeURIComponent(indexNumber)}`
+          `/api/admin/students/${encodeURIComponent(indexNumber)}`,
+          { cache: "no-store" }
         );
         if (!res.ok) {
           if (res.status === 404) throw new Error("Student not found");
@@ -454,10 +456,17 @@ export default function StudentDetailPage() {
                                       {sem.subjects.map((subj, idx) => (
                                         <tr
                                           key={idx}
-                                          className="hover:bg-slate-800/30 transition-colors"
+                                          className={`hover:bg-slate-800/30 transition-colors ${!subj.isGpa ? "opacity-70" : ""}`}
                                         >
                                           <td className="px-4 py-2 text-slate-300 font-mono text-xs">
-                                            {subj.subjectCode}
+                                            <div className="flex items-center gap-1.5">
+                                              {subj.subjectCode}
+                                              {!subj.isGpa && (
+                                                <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-semibold">
+                                                  Non-GPA
+                                                </span>
+                                              )}
+                                            </div>
                                           </td>
                                           <td className="px-4 py-2 text-slate-300 max-w-[180px] truncate">
                                             {subj.subjectName}
@@ -472,10 +481,10 @@ export default function StudentDetailPage() {
                                             />
                                           </td>
                                           <td className="px-4 py-2 text-center text-slate-400">
-                                            {subj.gradePoint.toFixed(2)}
+                                            {subj.isGpa ? subj.gradePoint.toFixed(2) : "—"}
                                           </td>
                                           <td className="px-4 py-2 text-center text-slate-300 font-medium">
-                                            {subj.weightedGP.toFixed(2)}
+                                            {subj.isGpa ? subj.weightedGP.toFixed(2) : "—"}
                                           </td>
                                         </tr>
                                       ))}

@@ -5,6 +5,8 @@ import { getAdminFromRequest } from "@/lib/adminAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 import { eq, ilike, count } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface StudentRow {
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) {
         grade: results.grade,
         gradePoint: results.gradePoint,
         creditPoints: subjects.creditPoints,
+        isGpa: subjects.isGpa,
         yearNumber: semesters.yearNumber,
         semesterId: subjects.semesterId,
       })
@@ -93,6 +96,9 @@ export async function GET(request: NextRequest) {
       const studentData = resultsByStudent.get(row.studentIndex)!;
       studentData.grades.push({ grade: row.grade });
       studentData.semesterIds.add(row.semesterId);
+
+      // Only include GPA subjects in the FGPA calculation
+      if (!row.isGpa) continue;
 
       if (!studentData.byYear.has(row.yearNumber)) {
         studentData.byYear.set(row.yearNumber, []);

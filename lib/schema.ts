@@ -58,6 +58,7 @@ export const subjects = pgTable("subjects", {
   subjectCode: varchar("subject_code", { length: 20 }).notNull(),
   subjectName: varchar("subject_name", { length: 200 }).notNull(),
   creditPoints: integer("credit_points").notNull(),
+  isGpa: boolean("is_gpa").notNull().default(true),
   semesterId: integer("semester_id")
     .notNull()
     .references(() => semesters.id, { onDelete: "cascade" }),
@@ -78,6 +79,8 @@ export const results = pgTable(
     grade: varchar("grade", { length: 5 }).notNull(),
     gradePoint: decimal("grade_point", { precision: 3, scale: 2 }).notNull(),
     isRepeat: boolean("is_repeat").notNull().default(false),
+    pdfUploadId: integer("pdf_upload_id")
+      .references(() => pdfUploads.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
