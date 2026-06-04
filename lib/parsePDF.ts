@@ -41,8 +41,10 @@ function normalizeIndexNumber(rawIndex: string): string {
   // Remove whitespace, dots, colons, vertical bars
   const cleaned = rawIndex.replace(/[\s|.:]/g, "").toUpperCase();
 
-  // Try to match standard parts: 2-digit year, 2-5 chars for dept, 3-6 chars for number
-  const match = cleaned.match(/^(\d{2})([A-Z0-9]{2,5})([A-Z0-9]{3,6})$/);
+  // Try to match standard parts: 2-digit year, 2-4 letters for dept, 3-5 digits for number
+  // Use [A-Z] for dept and \d for number to avoid ambiguous splitting
+  // (e.g. 22FIS0530 must split as FIS + 0530, NOT FIS0 + 530)
+  const match = cleaned.match(/^(\d{2})([A-Z]{2,4})(\d{3,5})$/);
   if (match) {
     const year = match[1];
     let dept = match[2];

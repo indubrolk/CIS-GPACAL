@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { students, subjects, results, semesters } from "@/lib/schema";
 import { getAdminFromRequest } from "@/lib/adminAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
-import { eq, ilike, count } from "drizzle-orm";
+import { eq, ilike } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 
 interface StudentRow {
   indexNumber: string;
-  semestersWithData: number;
+  subjectsDone: number;
   fgpa: number;
   degreeClass: string;
   isPassed: boolean;
@@ -38,18 +38,7 @@ export async function GET(request: NextRequest) {
     );
     const filter = searchParams.get("filter") || "";
 
-    // ── 1. Fetch matching students (with pagination) ────────────────────
-    // First get total count for pagination
-    const countQuery = search
-      ? db
-          .select({ value: count() })
-          .from(students)
-          .where(ilike(students.indexNumber, `%${search}%`))
-      : db.select({ value: count() }).from(students);
-
-    const [totalRow] = await countQuery;
-
-    // Fetch student index numbers for the current page
+    // ── 1. Fetch students from the students table ────────────────────────
     const studentQuery = search
       ? db
           .select({ indexNumber: students.indexNumber })
@@ -112,13 +101,37 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // ── 3b. Merge students from results that may be missing from the
+    //        students table (handles cases where student creation failed
+    //        silently during upload, or FK was not enforced) ─────────────
+    const studentTableIndices = new Set(
+      allStudentRows.map((s) => s.indexNumber)
+    );
+
+    for (const idx of Array.from(resultsByStudent.keys())) {
+      if (!studentTableIndices.has(idx)) {
+        // Only include if it matches the search filter
+        if (
+          !search ||
+          idx.toLowerCase().includes(search.toLowerCase())
+        ) {
+          allStudentRows.push({ indexNumber: idx });
+        }
+      }
+    }
+
+    // Re-sort after merging
+    allStudentRows.sort((a, b) =>
+      a.indexNumber.localeCompare(b.indexNumber)
+    );
+
     // ── 4. Compute GPA data for each student ────────────────────────────
     const enrichedStudents: StudentRow[] = allStudentRows.map((s) => {
       const data = resultsByStudent.get(s.indexNumber);
       if (!data || data.grades.length === 0) {
         return {
           indexNumber: s.indexNumber,
-          semestersWithData: 0,
+          subjectsDone: 0,
           fgpa: 0,
           degreeClass: getClass(0),
           isPassed: false,
@@ -138,7 +151,7 @@ export async function GET(request: NextRequest) {
 
       return {
         indexNumber: s.indexNumber,
-        semestersWithData: data.semesterIds.size,
+        subjectsDone: data.grades.length,
         fgpa,
         degreeClass,
         isPassed: passed,
@@ -149,7 +162,7 @@ export async function GET(request: NextRequest) {
     let filtered = enrichedStudents;
     if (filter === "at-risk") {
       filtered = enrichedStudents.filter(
-        (s) => s.semestersWithData > 0 && s.fgpa < 2.0
+        (s) => s.subjectsDone > 0 && s.fgpa < 2.0
       );
     } else if (filter === "first-class") {
       filtered = enrichedStudents.filter(
