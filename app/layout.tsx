@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CIS GPA Calculator",
   description:
-    "GPA Calculator for the Department of Computing & Information Systems",
+    "GPA Calculator for the  & Information Systems & Information Systems",
 };
 
 export default function RootLayout({

@@ -52,7 +52,7 @@ export default function Home() {
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer className="py-6 text-center text-xs text-slate-600">
-        © {new Date().getFullYear()} Department of Computing &amp; Information
+        © {new Date().getFullYear()} Department of Computing & Information Systems &amp; Information
         Systems
       </footer>
     </div>

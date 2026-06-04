@@ -5,6 +5,9 @@ import { verifyToken, getDefaultPasswordHash } from "@/lib/auth";
 import { GRADE_POINTS } from "@/lib/grades";
 import { eq, and, inArray } from "drizzle-orm";
 
+// Force Node.js runtime — jsonwebtoken / bcryptjs don't work in Edge
+export const runtime = "nodejs";
+
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
 function getAdminFromRequest(request: NextRequest) {

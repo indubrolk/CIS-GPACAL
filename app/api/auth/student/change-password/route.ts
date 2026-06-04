@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { students } from "@/lib/schema";
 import { comparePassword, hashPassword, verifyToken } from "@/lib/auth";
 
+// Force Node.js runtime — jsonwebtoken / bcryptjs don't work in Edge
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   try {
     // ── Verify student JWT ──────────────────────────────────────────────

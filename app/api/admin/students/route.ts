@@ -7,6 +7,9 @@ import { eq, ilike, count } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+// Force Node.js runtime — jsonwebtoken don't work in Edge
+export const runtime = "nodejs";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface StudentRow {

@@ -32,7 +32,7 @@ export default function ErrorBoundary({
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
           Something went wrong!
         </h1>
-        
+
         {/* Subtitle / User Message */}
         <p className="mt-4 text-sm sm:text-base text-slate-400 max-w-md">
           An unexpected error occurred while loading this page. Our technical team has been notified.
@@ -62,7 +62,7 @@ export default function ErrorBoundary({
             <RefreshCw className="h-4 w-4" />
             Try Again
           </button>
-          
+
           <Link
             href="/"
             className="

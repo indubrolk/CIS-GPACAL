@@ -18,12 +18,12 @@ export default function NotFound() {
         <h1 className="text-7xl sm:text-8xl font-extrabold tracking-tight bg-gradient-to-r from-red-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
           404
         </h1>
-        
+
         {/* Subtitle */}
         <h2 className="mt-4 text-xl sm:text-2xl font-semibold text-slate-200">
           Page Not Found
         </h2>
-        
+
         {/* Description */}
         <p className="mt-2 text-sm sm:text-base text-slate-400 max-w-md">
           The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.

@@ -78,7 +78,7 @@ export default function StudentLoginPage() {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
-              Department of Computing
+              Department of Computing & Information Systems
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 -mt-0.5">
               GPA Portal

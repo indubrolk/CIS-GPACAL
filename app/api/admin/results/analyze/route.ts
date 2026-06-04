@@ -3,6 +3,9 @@ import { verifyToken } from "@/lib/auth";
 import { parseOCRText } from "@/lib/parsePDF";
 import pdf from "pdf-parse";
 
+// Force Node.js runtime — jsonwebtoken / pdf-parse / Buffer don't work in Edge
+export const runtime = "nodejs";
+
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
 function getAdminFromRequest(request: NextRequest) {

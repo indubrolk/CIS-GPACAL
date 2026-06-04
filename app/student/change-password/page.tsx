@@ -180,7 +180,7 @@ export default function ChangePasswordPage() {
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
-              Department of Computing
+              Department of Computing & Information Systems
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 -mt-0.5">
               GPA Portal
@@ -314,11 +314,10 @@ export default function ChangePasswordPage() {
                         {[1, 2, 3, 4, 5].map((level) => (
                           <div
                             key={level}
-                            className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
-                              level <= strength.score
-                                ? strength.barColor
-                                : "bg-slate-700"
-                            }`}
+                            className={`h-1 flex-1 rounded-full transition-colors duration-200 ${level <= strength.score
+                              ? strength.barColor
+                              : "bg-slate-700"
+                              }`}
                           />
                         ))}
                       </div>
@@ -376,9 +375,8 @@ export default function ChangePasswordPage() {
                       <X className="h-3.5 w-3.5 text-slate-500" />
                     )}
                     <span
-                      className={`text-xs ${
-                        isMinLength ? "text-emerald-400" : "text-slate-500"
-                      }`}
+                      className={`text-xs ${isMinLength ? "text-emerald-400" : "text-slate-500"
+                        }`}
                     >
                       At least 8 characters
                     </span>
@@ -390,9 +388,8 @@ export default function ChangePasswordPage() {
                       <X className="h-3.5 w-3.5 text-slate-500" />
                     )}
                     <span
-                      className={`text-xs ${
-                        passwordsMatch ? "text-emerald-400" : "text-slate-500"
-                      }`}
+                      className={`text-xs ${passwordsMatch ? "text-emerald-400" : "text-slate-500"
+                        }`}
                     >
                       Passwords match
                     </span>

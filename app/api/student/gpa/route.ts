@@ -86,10 +86,20 @@ function generateRecommendations(
   return recommendations;
 }
 
+// Force Node.js runtime — jsonwebtoken / bcryptjs don't work in Edge
+export const runtime = "nodejs";
+
 // ─── GET /api/student/gpa ───────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const student = getStudentFromRequest(request);
+  let student;
+  try {
+    student = getStudentFromRequest(request);
+  } catch (authErr) {
+    console.error("Auth verification error:", authErr);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!student) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
