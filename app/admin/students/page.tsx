@@ -18,7 +18,7 @@ import {
 
 interface StudentRow {
   indexNumber: string;
-  semestersWithData: number;
+  subjectsDone: number;
   fgpa: number;
   degreeClass: string;
   isPassed: boolean;
@@ -282,7 +282,7 @@ function StudentsPageContent() {
                       {student.indexNumber}
                     </td>
                     <td className="px-5 py-3.5 text-sm text-slate-400">
-                      {student.semestersWithData}
+                      {student.subjectsDone}
                     </td>
                     <td className="px-5 py-3.5">
                       <span
