@@ -242,7 +242,8 @@ export default function StudentDashboardPage() {
           router.push("/student/login");
           return;
         }
-        throw new Error("Failed to fetch GPA data");
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Failed to fetch GPA data");
       }
       const json = await res.json();
       setData(json);

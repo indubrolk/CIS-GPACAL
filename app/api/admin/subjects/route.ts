@@ -6,6 +6,9 @@ import { eq, and } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+// Force Node.js runtime — jsonwebtoken don't work in Edge
+export const runtime = "nodejs";
+
 // ─── Helper: Verify Admin JWT ───────────────────────────────────────────────
 
 function getAdminFromRequest(request: NextRequest) {

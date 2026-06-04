@@ -7,6 +7,9 @@ import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
+// Force Node.js runtime — jsonwebtoken don't work in Edge
+export const runtime = "nodejs";
+
 // ─── GET /api/admin/students/[index] ────────────────────────────────────────
 
 export async function GET(
