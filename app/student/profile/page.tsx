@@ -1,37 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getStudentFromRequest } from "@/lib/studentAuth";
-import { db } from "@/lib/db";
-import { students } from "@/lib/schema";
-import { eq } from "drizzle-orm";
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, GraduationCap, Mail, Shield, Loader2 } from "lucide-react";
-
-
-export async function GET(req: NextRequest) {
-  const student = getStudentFromRequest(req);
-
-  if (!student) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const data = await db
-    .select({
-      indexNumber: students.indexNumber,
-      isFirstLogin: students.isFirstLogin,
-    })
-    .from(students)
-    .where(eq(students.indexNumber, student.identifier))
-    .limit(1);
-
-  return NextResponse.json(data[0]);
-}
+import { Button } from "@/components/ui/button";
+import { Loader2, GraduationCap, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface GPA {
   indexNumber: string;
