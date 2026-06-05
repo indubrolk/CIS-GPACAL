@@ -36,7 +36,7 @@ interface YearData {
 // ─── Recommendation Generator ───────────────────────────────────────────────
 
 function generateRecommendations(
-  allSubjects: { grade: string; subjectCode: string }[],
+  allSubjects: { grade: string; subjectCode: string; subjectName: string }[],
   fgpa: number,
   hasResults: boolean
 ): string[] {
@@ -47,13 +47,23 @@ function generateRecommendations(
     return ["📋 No results have been uploaded yet. Check back later."];
   }
 
-  // Failed subjects (E or AB)
-  const failedSubjects = allSubjects.filter(
-    (s) => s.grade === "E" || s.grade === "AB"
+  // Must rewrite: D, E, or AB grades
+  const mustRewrite = allSubjects.filter(
+    (s) => s.grade === "D" || s.grade === "E" || s.grade === "AB"
   );
-  for (const s of failedSubjects) {
+  for (const s of mustRewrite) {
     recommendations.push(
-      `⚠️ You have a failed subject (${s.subjectCode}). Consider applying for a repeat examination.`
+      `🚨 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. You must re-sit this examination.`
+    );
+  }
+
+  // Consider rewriting: C- or D+ grades (can improve GPA)
+  const considerRewrite = allSubjects.filter(
+    (s) => s.grade === "C-" || s.grade === "D+"
+  );
+  for (const s of considerRewrite) {
+    recommendations.push(
+      `💡 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. Consider re-sitting this exam to improve your GPA.`
     );
   }
 
@@ -270,6 +280,7 @@ export async function GET(request: NextRequest) {
     const allSubjectsFlat = rows.map((r) => ({
       grade: r.grade,
       subjectCode: r.subjectCode,
+      subjectName: r.subjectName,
     }));
     const recommendations = generateRecommendations(
       allSubjectsFlat,
