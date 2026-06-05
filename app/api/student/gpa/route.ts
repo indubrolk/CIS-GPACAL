@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
               bestSemesterGPA = semesterGPA;
             }
 
-            totalSubjects += semData.subjects.length;
+            totalSubjects += semData.subjects.filter(s => s.isGpa).length;
             // Only count GPA subject credits toward totalCredits
             totalCredits += gpaSubjects.reduce(
               (sum, s) => sum + s.creditPoints,
@@ -258,7 +258,11 @@ export async function GET(request: NextRequest) {
     const fgpa = calcFGPA(yearGPAs);
     const degreeClass = getClass(fgpa);
     const passed = isPass(
-      rows.map((r) => ({ grade: r.grade })),
+      rows.map((r) => ({ 
+        grade: r.grade,
+        isRepeat: r.isRepeat,
+        isGpa: r.isGpa
+      })),
       fgpa
     );
 
