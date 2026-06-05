@@ -20,7 +20,7 @@ export interface ParsedSheet {
 // Allows OCR errors in the index number (like digits in letters or letters in digits)
 // and handles separators like spaces, colons, vertical bars.
 const INDEX_GRADE_REGEX =
-  /\b(\d{2}[A-Z0-9|]{2,5}\d{3,6})\s*[|.:\s]*\s*(A\+|A-|AB|A|B\+|B-|B|C\+|C-|C|D\+|D|E)\b/gi;
+  /\b(\d{2}[A-Z0-9|]{2,5}\d{3,6})\s*[|.:\s]*\s*(A\+|A-|AB|A|B\+|B-|B|C\+|C-|C|D\+|D|E)(?![A-Z0-9+-])/gi;
 
 // ─── Subject Code + Name from Header ────────────────────────────────────────
 // Matches: "Code and Title of Paper : IS 2106 System Analysis & Design"
@@ -41,33 +41,63 @@ function normalizeIndexNumber(rawIndex: string): string {
   // Remove whitespace, dots, colons, vertical bars, hyphens, and slashes
   const cleaned = rawIndex.replace(/[\s|.:\-\/]/g, "").toUpperCase();
 
-  // Try to match standard parts: 2-digit year, 2-4 letters for dept, 3-5 digits for number
-  // Use [A-Z] for dept and \d for number to avoid ambiguous splitting
-  // (e.g. 22FIS0530 must split as FIS + 0530, NOT FIS0 + 530)
-  const match = cleaned.match(/^(\d{2})([A-Z]{2,4})(\d{3,5})$/);
-  if (match) {
-    const year = match[1];
-    let dept = match[2];
-    let num = match[3];
-
-    // Normalize Dept letters (replace numbers with corresponding letters)
-    dept = dept
-      .replace(/1/gi, "I")
-      .replace(/0/gi, "O")
-      .replace(/5/gi, "S");
-
-    // Normalize Student Number digits (replace letters with corresponding numbers)
-    num = num
-      .replace(/[OQD]/g, "0")
-      .replace(/[ILTG]/g, "1")
-      .replace(/S/g, "5")
-      .replace(/Z/g, "2")
-      .replace(/B/g, "8");
-
-    return `${year}${dept}${num}`;
+  // A valid cleaned index number has length between 8 and 11
+  if (cleaned.length < 8 || cleaned.length > 11) {
+    return cleaned;
   }
 
-  return cleaned;
+  const year = cleaned.substring(0, 2);
+  const rest = cleaned.substring(2);
+
+  // Default to 3-letter dept (CIS/FIS)
+  let deptLen = 3;
+
+  // Check prefix to see if it's CIS/FIS/IT
+  const first3 = rest.substring(0, 3)
+    .replace(/1/g, "I")
+    .replace(/0/g, "O")
+    .replace(/5/g, "S");
+
+  const first2 = rest.substring(0, 2)
+    .replace(/1/g, "I")
+    .replace(/0/g, "O")
+    .replace(/5/g, "S");
+
+  if (first3 === "CIS" || first3 === "FIS") {
+    deptLen = 3;
+  } else if (first2 === "IT") {
+    deptLen = 2;
+  } else {
+    // Fallback split logic
+    if (rest.length === 6) {
+      deptLen = 2;
+    } else if (rest.length === 7) {
+      deptLen = 3;
+    } else {
+      deptLen = rest.length - 4; // default student number is 4 digits
+      if (deptLen < 2) deptLen = 2;
+      if (deptLen > 4) deptLen = 4;
+    }
+  }
+
+  let dept = rest.substring(0, deptLen);
+  let num = rest.substring(deptLen);
+
+  // Normalize Dept letters (replace numbers with corresponding letters)
+  dept = dept
+    .replace(/1/g, "I")
+    .replace(/0/g, "O")
+    .replace(/5/g, "S");
+
+  // Normalize Student Number digits (replace letters with corresponding numbers)
+  num = num
+    .replace(/[OQD]/g, "0")
+    .replace(/[ILTG]/g, "1")
+    .replace(/S/g, "5")
+    .replace(/Z/g, "2")
+    .replace(/B/g, "8");
+
+  return `${year}${dept}${num}`;
 }
 
 /**
