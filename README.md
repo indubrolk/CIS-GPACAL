@@ -99,3 +99,5 @@ The project is preconfigured for deployment on Netlify using the `@netlify/plugi
 
 - **`netlify.toml`** specifies build settings and Node.js version 20 runtime.
 - Environment variables (`DATABASE_URL`, `JWT_SECRET`, `ANTHROPIC_API_KEY`) must be added in the Netlify site dashboard under **Site configuration > Environment variables**.
+
+.
