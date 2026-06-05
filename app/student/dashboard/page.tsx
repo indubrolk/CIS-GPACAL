@@ -44,6 +44,7 @@ import {
   Diamond,
   Check,
   X,
+  User,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -108,17 +109,17 @@ function getGradeColor(grade: string): string {
 // ─── Grade Hint (inline advice per subject) ─────────────────────────────────
 
 function getGradeHint(grade: string): { text: string; color: string } | null {
-  // Must re-sit: D, E, AB
+  // Must write again: D, E, AB (less than D+)
   if (grade === "D" || grade === "E" || grade === "AB") {
     return {
-      text: grade === "D" ? "Must re-sit" : grade === "E" ? "Failed — Must re-sit" : "Absent — Must re-sit",
+      text: grade === "D" ? "Have to write again" : grade === "E" ? "Failed — Write again" : "Absent — Write again",
       color: "bg-red-500/15 text-red-400 border-red-500/25",
     };
   }
-  // Consider re-sitting: C-, D+
+  // Rewrite if you can: C-, D+
   if (grade === "C-" || grade === "D+") {
     return {
-      text: "Consider re-sitting",
+      text: "Rewrite if you can",
       color: "bg-amber-500/15 text-amber-400 border-amber-500/25",
     };
   }
@@ -242,8 +243,14 @@ function DashboardSkeleton() {
 
 // ─── Main Dashboard Component ───────────────────────────────────────────────
 
+interface StudentProfile {
+  fullName: string | null;
+  indexNumber: string;
+}
+
 export default function StudentDashboardPage() {
   const [data, setData] = useState<GPAResponse | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -254,19 +261,25 @@ export default function StudentDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/student/gpa", {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
+      const [gpaRes, profileRes] = await Promise.all([
+        fetch("/api/student/gpa", { cache: "no-store" }),
+        fetch("/api/student/profile", { cache: "no-store" }),
+      ]);
+      if (!gpaRes.ok) {
+        if (gpaRes.status === 401) {
           router.push("/student/login");
           return;
         }
-        const errData = await res.json().catch(() => null);
+        const errData = await gpaRes.json().catch(() => null);
         throw new Error(errData?.error || "Failed to fetch GPA data");
       }
-      const json = await res.json();
+      const json = await gpaRes.json();
       setData(json);
+
+      if (profileRes.ok) {
+        const profileJson = await profileRes.json();
+        setProfile(profileJson);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred"
@@ -315,8 +328,24 @@ export default function StudentDashboardPage() {
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-sm text-slate-300"
             >
-              <span className="font-mono text-xs sm:text-sm text-emerald-400">
-                {data?.indexNumber || "Loading…"}
+              {/* Avatar circle */}
+              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-bold text-white">
+                  {profile?.fullName
+                    ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                    : data?.indexNumber?.slice(0, 2).toUpperCase() || "?"}
+                </span>
+              </div>
+              <div className="hidden sm:flex flex-col items-start leading-tight">
+                <span className="text-xs font-medium text-white truncate max-w-[140px]">
+                  {profile?.fullName || "Student"}
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400">
+                  {data?.indexNumber || "Loading…"}
+                </span>
+              </div>
+              <span className="sm:hidden font-mono text-xs text-emerald-400">
+                {data?.indexNumber || "…"}
               </span>
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
@@ -332,6 +361,17 @@ export default function StudentDashboardPage() {
                 />
                 {/* Dropdown menu */}
                 <div className="absolute right-0 mt-1 w-48 rounded-lg border border-slate-700/50 bg-slate-800 shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button
+                    id="menu-profile"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/student/profile");
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    My Profile
+                  </button>
                   <button
                     id="menu-change-password"
                     onClick={() => {
@@ -385,10 +425,27 @@ export default function StudentDashboardPage() {
         ) : data ? (
           <>
             {/* ── Page Header ────────────────────────────────────────── */}
-            <div className="flex items-center justify-between pb-2">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">Student Dashboard</h1>
-                <p className="text-slate-400 text-xs sm:text-sm mt-0.5">Your academic performance overview</p>
+            {/* ── Student Welcome Banner ─────────────────────────── */}
+            <div className="flex items-center gap-4 pb-4 mb-2 border-b border-slate-700/30">
+              {/* Avatar */}
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                <span className="text-xl font-bold text-white">
+                  {profile?.fullName
+                    ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                    : data?.indexNumber?.slice(0, 2).toUpperCase() || "?"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
+                  {profile?.fullName ? `Welcome, ${profile.fullName}` : "Student Dashboard"}
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/25 font-mono text-[11px] px-2 py-0.5">
+                    {data.indexNumber}
+                  </Badge>
+                  <span className="text-slate-500 text-xs">•</span>
+                  <p className="text-slate-400 text-xs sm:text-sm">Your academic performance overview</p>
+                </div>
               </div>
               <Button
                 onClick={fetchGPA}
