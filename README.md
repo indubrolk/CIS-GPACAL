@@ -3,6 +3,7 @@
 A full-stack, responsive GPA Calculator and Student Portal built using **Next.js 14 (App Router & TypeScript)**, **Tailwind CSS**, **shadcn/ui**, and **Neon PostgreSQL with Drizzle ORM**. It features an automated OCR pipeline for parsing results sheets, student management, and smart recommendations.
 
 ---
+---
 
 
 ## 🚀 Features
