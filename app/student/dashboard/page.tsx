@@ -105,6 +105,26 @@ function getGradeColor(grade: string): string {
   return colors[grade] || "bg-slate-500/20 text-slate-300 border-slate-500/30";
 }
 
+// ─── Grade Hint (inline advice per subject) ─────────────────────────────────
+
+function getGradeHint(grade: string): { text: string; color: string } | null {
+  // Must re-sit: D, E, AB
+  if (grade === "D" || grade === "E" || grade === "AB") {
+    return {
+      text: grade === "D" ? "Must re-sit" : grade === "E" ? "Failed — Must re-sit" : "Absent — Must re-sit",
+      color: "bg-red-500/15 text-red-400 border-red-500/25",
+    };
+  }
+  // Consider re-sitting: C-, D+
+  if (grade === "C-" || grade === "D+") {
+    return {
+      text: "Consider re-sitting",
+      color: "bg-amber-500/15 text-amber-400 border-amber-500/25",
+    };
+  }
+  return null;
+}
+
 // ─── Class Tier Styling ─────────────────────────────────────────────────────
 
 function getClassTier(degreeClass: string) {
@@ -172,7 +192,7 @@ function getRecommendationVariant(
   text: string
 ): "destructive" | "warning" | "info" | "success" | "default" {
   if (text.startsWith("🚨")) return "destructive";
-  if (text.startsWith("⚠️")) return "warning";
+  if (text.startsWith("⚠️") || text.startsWith("💡")) return "warning";
   if (text.startsWith("📈") || text.startsWith("📘") || text.startsWith("⭐"))
     return "info";
   if (text.startsWith("🏆")) return "success";
@@ -630,15 +650,22 @@ export default function StudentDashboardPage() {
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5">
-                                            <div className="inline-flex items-center gap-1.5">
-                                              <Badge
-                                                className={`${getGradeColor(subj.grade)} border text-xs font-mono`}
-                                              >
-                                                {subj.grade}
-                                              </Badge>
-                                              {subj.isRepeat && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
-                                                  Repeat
+                                            <div className="inline-flex flex-col items-center gap-1">
+                                              <div className="inline-flex items-center gap-1.5">
+                                                <Badge
+                                                  className={`${getGradeColor(subj.grade)} border text-xs font-mono`}
+                                                >
+                                                  {subj.grade}
+                                                </Badge>
+                                                {subj.isRepeat && (
+                                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
+                                                    Repeat
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {getGradeHint(subj.grade) && (
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${getGradeHint(subj.grade)!.color}`}>
+                                                  {getGradeHint(subj.grade)!.text}
                                                 </span>
                                               )}
                                             </div>

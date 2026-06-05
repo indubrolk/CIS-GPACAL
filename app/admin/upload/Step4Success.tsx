@@ -34,7 +34,7 @@ export function Step4Success({ saved, created, skipped, onUploadAnother }: Step4
           {skipped > 0 && (
             <div>
               <p className="text-3xl font-bold text-yellow-400">{skipped}</p>
-              <p className="text-sm text-slate-400">skipped (repeat/no improvement)</p>
+              <p className="text-sm text-slate-400">skipped (repeat exam, no improvement)</p>
             </div>
           )}
         </div>
