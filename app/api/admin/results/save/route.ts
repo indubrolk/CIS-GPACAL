@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { subjectId, uploadMeta, students: studentEntries } = body;
+    const { subjectId, examType, uploadMeta, students: studentEntries } = body;
 
     if (!subjectId || !studentEntries || !Array.isArray(studentEntries)) {
       return NextResponse.json(
@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const isRepeatExam = examType === "Repeat";
 
     // Verify subject exists
     const subjectRows = await db
@@ -194,12 +196,30 @@ export async function POST(request: NextRequest) {
           pdfUploadId,
         });
         saved++;
+      } else if (!isRepeatExam) {
+        // ── PROPER exam: always overwrite with the new grade ──
+        try {
+          await db
+            .update(results)
+            .set({
+              grade: entry.grade,
+              gradePoint: entry.gradePoint.toFixed(2),
+              isRepeat: false,
+              pdfUploadId,
+            })
+            .where(eq(results.id, existing.id));
+          saved++;
+        } catch (updateErr) {
+          const msg =
+            updateErr instanceof Error ? updateErr.message : "Unknown error";
+          errors.push(`Error updating ${entry.indexNumber}: ${msg}`);
+        }
       } else {
-        // Existing result — handle repeat logic
+        // ── REPEAT exam: apply university repeat rule ──
         const isNewPassing = entry.grade !== "E" && entry.grade !== "AB";
 
         if (isNewPassing) {
-          // Repeat pass: award C grade (2.00 GP) per university repeat rule (unless Non-GPA)
+          // Repeat pass: cap at C grade (2.00 GP) per university rule (unless Non-GPA)
           try {
             await db
               .update(results)
@@ -217,8 +237,23 @@ export async function POST(request: NextRequest) {
             errors.push(`Error updating ${entry.indexNumber}: ${msg}`);
           }
         } else {
-          // New grade is E or AB: skip, keep old record
-          skipped++;
+          // E or AB on a repeat: still save/update the grade (do NOT skip)
+          try {
+            await db
+              .update(results)
+              .set({
+                grade: entry.grade,
+                gradePoint: "0.00",
+                isRepeat: true,
+                pdfUploadId,
+              })
+              .where(eq(results.id, existing.id));
+            saved++;
+          } catch (updateErr) {
+            const msg =
+              updateErr instanceof Error ? updateErr.message : "Unknown error";
+            errors.push(`Error updating ${entry.indexNumber}: ${msg}`);
+          }
         }
       }
     }
