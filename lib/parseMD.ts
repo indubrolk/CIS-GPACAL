@@ -37,10 +37,38 @@ const VALID_GRADES = new Set([
 const INDEX_NUMBER_REGEX = /^\d{2}[A-Z]{2,4}\d{3,5}$/;
 
 /**
- * Normalize an index number: trim, uppercase, remove stray whitespace.
+ * Normalize an index number: trim, uppercase, remove punctuation/slashes, and fix common typos.
  */
 function normalizeIndex(raw: string): string {
-  return raw.trim().toUpperCase().replace(/\s+/g, "");
+  // Remove space, dots, colons, vertical bars, hyphens, and slashes
+  const cleaned = raw.replace(/[\s|.:\-\/]/g, "").toUpperCase();
+
+  // Try to match standard parts: 2-digit year, 2-4 letters for dept, 3-5 digits for number
+  // (e.g. 22FIS053O must split as FIS + 0530, NOT FIS0 + 530)
+  const match = cleaned.match(/^(\d{2})([A-Z0-9]{2,4})([A-Z0-9]{3,5})$/);
+  if (match) {
+    const year = match[1];
+    let dept = match[2];
+    let num = match[3];
+
+    // Normalize Dept letters (replace numbers with corresponding letters)
+    dept = dept
+      .replace(/1/g, "I")
+      .replace(/0/g, "O")
+      .replace(/5/g, "S");
+
+    // Normalize Student Number digits (replace letters with corresponding numbers)
+    num = num
+      .replace(/[OQD]/g, "0")
+      .replace(/[ILTG]/g, "1")
+      .replace(/S/g, "5")
+      .replace(/Z/g, "2")
+      .replace(/B/g, "8");
+
+    return `${year}${dept}${num}`;
+  }
+
+  return cleaned;
 }
 
 /**

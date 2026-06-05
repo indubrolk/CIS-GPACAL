@@ -47,23 +47,23 @@ function generateRecommendations(
     return ["📋 No results have been uploaded yet. Check back later."];
   }
 
-  // Must rewrite: D, E, or AB grades
+  // Must rewrite: D, E, or AB grades (less than D+)
   const mustRewrite = allSubjects.filter(
     (s) => s.grade === "D" || s.grade === "E" || s.grade === "AB"
   );
   for (const s of mustRewrite) {
     recommendations.push(
-      `🚨 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. You must re-sit this examination.`
+      `🚨 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. You have to write this exam again.`
     );
   }
 
-  // Consider rewriting: C- or D+ grades (can improve GPA)
+  // Consider rewriting: C- or D+ grades
   const considerRewrite = allSubjects.filter(
     (s) => s.grade === "C-" || s.grade === "D+"
   );
   for (const s of considerRewrite) {
     recommendations.push(
-      `💡 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. Consider re-sitting this exam to improve your GPA.`
+      `💡 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. If you can, rewrite this exam again to improve your GPA.`
     );
   }
 

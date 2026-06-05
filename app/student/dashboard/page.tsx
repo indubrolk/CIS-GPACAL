@@ -108,17 +108,17 @@ function getGradeColor(grade: string): string {
 // ─── Grade Hint (inline advice per subject) ─────────────────────────────────
 
 function getGradeHint(grade: string): { text: string; color: string } | null {
-  // Must re-sit: D, E, AB
+  // Must write again: D, E, AB (less than D+)
   if (grade === "D" || grade === "E" || grade === "AB") {
     return {
-      text: grade === "D" ? "Must re-sit" : grade === "E" ? "Failed — Must re-sit" : "Absent — Must re-sit",
+      text: grade === "D" ? "Have to write again" : grade === "E" ? "Failed — Write again" : "Absent — Write again",
       color: "bg-red-500/15 text-red-400 border-red-500/25",
     };
   }
-  // Consider re-sitting: C-, D+
+  // Rewrite if you can: C-, D+
   if (grade === "C-" || grade === "D+") {
     return {
-      text: "Consider re-sitting",
+      text: "Rewrite if you can",
       color: "bg-amber-500/15 text-amber-400 border-amber-500/25",
     };
   }

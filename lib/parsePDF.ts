@@ -38,8 +38,8 @@ const SEMESTER_REGEX =
  * Format is typically: YY[DEPT]NNNN (e.g. 22CIS0123)
  */
 function normalizeIndexNumber(rawIndex: string): string {
-  // Remove whitespace, dots, colons, vertical bars
-  const cleaned = rawIndex.replace(/[\s|.:]/g, "").toUpperCase();
+  // Remove whitespace, dots, colons, vertical bars, hyphens, and slashes
+  const cleaned = rawIndex.replace(/[\s|.:\-\/]/g, "").toUpperCase();
 
   // Try to match standard parts: 2-digit year, 2-4 letters for dept, 3-5 digits for number
   // Use [A-Z] for dept and \d for number to avoid ambiguous splitting
