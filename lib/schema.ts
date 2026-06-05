@@ -17,6 +17,14 @@ export const students = pgTable("students", {
   indexNumber: varchar("index_number", { length: 50 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   isFirstLogin: boolean("is_first_login").notNull().default(true),
+  // ── Profile fields (editable by student) ─────────────────────────────
+  fullName: varchar("full_name", { length: 200 }),
+  email: varchar("email", { length: 200 }),
+  phone: varchar("phone", { length: 30 }),
+  address: text("address"),
+  dateOfBirth: varchar("date_of_birth", { length: 20 }),
+  faculty: varchar("faculty", { length: 200 }),
+  department: varchar("department", { length: 200 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
