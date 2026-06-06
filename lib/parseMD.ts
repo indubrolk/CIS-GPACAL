@@ -117,7 +117,7 @@ function normalizeIndex(raw: string): string {
  * Normalize a grade string: trim, uppercase, normalize dashes, remove trailing dots.
  */
 function normalizeGrade(raw: string): string {
-  return raw
+  let grade = raw
     .trim()
     .toUpperCase()
     // Normalize en-dash, em-dash, underscore to hyphen
@@ -126,6 +126,11 @@ function normalizeGrade(raw: string): string {
     .replace(/\.$/, "")
     // Remove any spaces between letter and modifier (e.g. "A +" → "A+")
     .replace(/([A-E])\s+([+-])/g, "$1$2");
+
+  // Map "ABSENT" → "AB"
+  if (grade === "ABSENT") grade = "AB";
+
+  return grade;
 }
 
 // ─── Table Row Parser ───────────────────────────────────────────────────────
