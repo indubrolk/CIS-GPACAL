@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { results, subjects, semesters } from "@/lib/schema";
+import { results, subjects, semesters, students } from "@/lib/schema";
 import { getAdminFromRequest } from "@/lib/adminAuth";
 import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
 import { eq } from "drizzle-orm";
+import { getDefaultPasswordHash } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -160,3 +161,56 @@ export async function GET(
     );
   }
 }
+
+// ─── POST /api/admin/students/[index] (Reset Password) ──────────────────────
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { index: string } }
+) {
+  const admin = getAdminFromRequest(request);
+  if (!admin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const indexNumber = decodeURIComponent(params.index);
+
+    // Verify if the student exists first
+    const studentRows = await db
+      .select()
+      .from(students)
+      .where(eq(students.indexNumber, indexNumber))
+      .limit(1);
+
+    if (studentRows.length === 0) {
+      return NextResponse.json(
+        { error: "Student not found" },
+        { status: 404 }
+      );
+    }
+
+    const defaultPasswordHash = await getDefaultPasswordHash();
+
+    // Reset password to default hash and set isFirstLogin to true
+    await db
+      .update(students)
+      .set({
+        passwordHash: defaultPasswordHash,
+        isFirstLogin: true,
+      })
+      .where(eq(students.indexNumber, indexNumber));
+
+    return NextResponse.json({
+      success: true,
+      message: `Password for student ${indexNumber} has been reset to default (123456789) successfully.`,
+    });
+  } catch (error) {
+    console.error("POST /api/admin/students/[index] error:", error);
+    return NextResponse.json(
+      { error: "Failed to reset student password" },
+      { status: 500 }
+    );
+  }
+}
+
