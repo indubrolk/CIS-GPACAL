@@ -216,9 +216,8 @@ export function parseMDText(rawText: string): ParsedSheet {
 
   // Detect if the file uses markdown table format
   let tableHeaderParsed = false;
-  // Track which column has the index and which has the grade
-  let indexCol = 0;
-  let gradeCol = 1;
+  // Track all column pairs mapping { indexCol, gradeCol }
+  let columnPairs: { indexCol: number; gradeCol: number }[] = [{ indexCol: 0, gradeCol: 1 }];
 
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
@@ -249,53 +248,70 @@ export function parseMDText(rawText: string): ParsedSheet {
       // Check if it's a header row
       if (!tableHeaderParsed && isHeaderRow(tableCells)) {
         tableHeaderParsed = true;
+        columnPairs = [];
 
         // Detect column order from header labels
         for (let i = 0; i < tableCells.length; i++) {
           const cell = tableCells[i].toLowerCase();
           if (/index|student|number|reg|id/.test(cell)) {
-            indexCol = i;
+            // Find the closest subsequent grade column that hasn't been paired yet
+            for (let j = i + 1; j < tableCells.length; j++) {
+              const nextCell = tableCells[j].toLowerCase();
+              if (/grade|result|mark|score/.test(nextCell)) {
+                if (!columnPairs.some((p) => p.gradeCol === j)) {
+                  columnPairs.push({ indexCol: i, gradeCol: j });
+                  break;
+                }
+              }
+            }
           }
-          if (/grade|result|mark/.test(cell)) {
-            gradeCol = i;
-          }
+        }
+
+        // If no pairs were found, default to 0 and 1
+        if (columnPairs.length === 0) {
+          columnPairs.push({ indexCol: 0, gradeCol: 1 });
         }
         continue;
       }
 
       // Data row
       if (tableCells.length >= 2) {
-        const rawIndex = tableCells[indexCol] || "";
-        const rawGrade = tableCells[gradeCol] || "";
+        for (const { indexCol, gradeCol } of columnPairs) {
+          const rawIndex = tableCells[indexCol] || "";
+          const rawGrade = tableCells[gradeCol] || "";
 
-        const indexNumber = normalizeIndex(rawIndex);
-        const grade = normalizeGrade(rawGrade);
+          // Skip if the raw cell is empty or has a standard placeholder like "-"
+          if (rawIndex.trim() === "" || rawIndex.trim() === "-") continue;
 
-        // Validate
-        if (!indexNumber) continue; // skip empty rows
+          const indexNumber = normalizeIndex(rawIndex);
+          const grade = normalizeGrade(rawGrade);
 
-        if (!INDEX_NUMBER_REGEX.test(indexNumber)) {
-          parseErrors.push(
-            `Line ${lineNum + 1}: Invalid index number "${rawIndex}" → "${indexNumber}"`
-          );
-          continue;
-        }
+          // Validate
+          if (!indexNumber) continue;
 
-        if (!VALID_GRADES.has(grade)) {
-          parseErrors.push(
-            `Line ${lineNum + 1}: Invalid grade "${rawGrade}" for ${indexNumber}`
-          );
-          continue;
-        }
+          if (!INDEX_NUMBER_REGEX.test(indexNumber)) {
+            parseErrors.push(
+              `Line ${lineNum + 1}: Invalid index number "${rawIndex}" → "${indexNumber}"`
+            );
+            continue;
+          }
 
-        // Deduplicate: keep first occurrence
-        if (!seen.has(indexNumber)) {
-          seen.add(indexNumber);
-          results.push({ indexNumber, grade });
-        } else {
-          parseErrors.push(
-            `Line ${lineNum + 1}: Duplicate index ${indexNumber} (skipped)`
-          );
+          if (!VALID_GRADES.has(grade)) {
+            parseErrors.push(
+              `Line ${lineNum + 1}: Invalid grade "${rawGrade}" for ${indexNumber}`
+            );
+            continue;
+          }
+
+          // Deduplicate: keep first occurrence
+          if (!seen.has(indexNumber)) {
+            seen.add(indexNumber);
+            results.push({ indexNumber, grade });
+          } else {
+            parseErrors.push(
+              `Line ${lineNum + 1}: Duplicate index ${indexNumber} (skipped)`
+            );
+          }
         }
       }
       continue;
