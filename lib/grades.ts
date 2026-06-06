@@ -25,14 +25,26 @@ const YEAR_WEIGHTS: Record<number, number> = {
   4: 0.3,
 };
 
+// ─── Semester Credits Mapping ────────────────────────────────────────────────
+
+export const SEMESTER_TOTAL_CREDITS: Record<number, number> = {
+  1: 16,
+  2: 16,
+  3: 16,
+  4: 17,
+  5: 18,
+  6: 6,
+};
+
 // ─── GPA Calculation ─────────────────────────────────────────────────────────
 
 /**
  * Calculate GPA from an array of results.
- * GPA = Σ(gradePoint × creditPoints) / Σ(creditPoints), rounded to 2 dp.
+ * GPA = Σ(gradePoint × creditPoints) / divisor, rounded to 2 dp.
  */
 export function calcGPA(
-  results: { gp: number; cp: number }[]
+  results: { gp: number; cp: number }[],
+  fixedCredits?: number
 ): number {
   if (results.length === 0) return 0;
 
@@ -40,11 +52,11 @@ export function calcGPA(
     (sum, r) => sum + r.gp * r.cp,
     0
   );
-  const totalCredits = results.reduce((sum, r) => sum + r.cp, 0);
+  const divisor = fixedCredits !== undefined && fixedCredits > 0 ? fixedCredits : results.reduce((sum, r) => sum + r.cp, 0);
 
-  if (totalCredits === 0) return 0;
+  if (divisor === 0) return 0;
 
-  return Math.round((totalWeighted / totalCredits) * 100) / 100;
+  return Math.round((totalWeighted / divisor) * 100) / 100;
 }
 
 // ─── Final GPA Calculation ──────────────────────────────────────────────────

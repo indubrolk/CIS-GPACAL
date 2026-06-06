@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { results, subjects, semesters, students } from "@/lib/schema";
 import { getAdminFromRequest } from "@/lib/adminAuth";
-import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
+import { calcGPA, calcFGPA, getClass, isPass, SEMESTER_TOTAL_CREDITS } from "@/lib/grades";
 import { eq } from "drizzle-orm";
 import { getDefaultPasswordHash } from "@/lib/auth";
 
@@ -122,7 +122,9 @@ export async function GET(
             }));
             yearResults.push(...semResults);
 
-            const semesterGPA = calcGPA(semResults);
+            const absSem = (yearNumber - 1) * 2 + semesterNumber;
+            const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+            const semesterGPA = calcGPA(semResults, fixedSemCredits);
 
             return {
               semesterNumber,
@@ -132,7 +134,23 @@ export async function GET(
             };
           });
 
-        const yearGPA = calcGPA(yearResults);
+        let yearDivisor = 0;
+        Array.from(semMap.entries()).forEach(([semNum, sData]) => {
+          const absSem = (yearNumber - 1) * 2 + semNum;
+          const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+          const hasGpaSubjects = sData.subjects.some((s) => s.isGpa);
+          if (hasGpaSubjects) {
+            if (fixedSemCredits !== undefined) {
+              yearDivisor += fixedSemCredits;
+            } else {
+              yearDivisor += sData.subjects
+                .filter((s) => s.isGpa)
+                .reduce((sum, s) => sum + s.creditPoints, 0);
+            }
+          }
+        });
+
+        const yearGPA = calcGPA(yearResults, yearDivisor);
         yearGPAs.push({ year: yearNumber, gpa: yearGPA });
 
         return {

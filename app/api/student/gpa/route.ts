@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { results, subjects, semesters } from "@/lib/schema";
 import { getStudentFromRequest } from "@/lib/studentAuth";
-import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
+import { calcGPA, calcFGPA, getClass, isPass, SEMESTER_TOTAL_CREDITS } from "@/lib/grades";
 
 export const dynamic = "force-dynamic";
 
@@ -207,11 +207,14 @@ export async function GET(request: NextRequest) {
           .map(([semesterNumber, semData]) => {
             // Only include GPA subjects in GPA calculation
             const gpaSubjects = semData.subjects.filter((s) => s.isGpa);
+            const absSem = (yearNumber - 1) * 2 + semesterNumber;
+            const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
             const semesterGPA = calcGPA(
               gpaSubjects.map((s) => ({
                 gp: s.gradePoint,
                 cp: s.creditPoints,
-              }))
+              })),
+              fixedSemCredits
             );
 
             if (semesterGPA > bestSemesterGPA) {
@@ -248,11 +251,29 @@ export async function GET(request: NextRequest) {
         const allYearGpaSubjects = semesterEntries
           .flatMap((s) => s.subjects)
           .filter((s) => s.isGpa);
+        
+        let yearDivisor = 0;
+        for (const sem of semesterEntries) {
+          const absSem = (yearNumber - 1) * 2 + sem.semesterNumber;
+          const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+          const hasGpaSubjects = sem.subjects.some((s) => s.isGpa);
+          if (hasGpaSubjects) {
+            if (fixedSemCredits !== undefined) {
+              yearDivisor += fixedSemCredits;
+            } else {
+              yearDivisor += sem.subjects
+                .filter((s) => s.isGpa)
+                .reduce((sum, s) => sum + s.creditPoints, 0);
+            }
+          }
+        }
+
         const yearGPA = calcGPA(
           allYearGpaSubjects.map((s) => ({
             gp: s.gradePoint,
             cp: s.creditPoints,
-          }))
+          })),
+          yearDivisor
         );
 
         yearGPAs.push({ year: yearNumber, gpa: yearGPA });

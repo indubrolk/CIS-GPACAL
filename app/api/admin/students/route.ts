@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { students, subjects, results, semesters } from "@/lib/schema";
 import { getAdminFromRequest } from "@/lib/adminAuth";
-import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
+import { calcGPA, calcFGPA, getClass, isPass, SEMESTER_TOTAL_CREDITS } from "@/lib/grades";
 import { eq, ilike } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
         creditPoints: subjects.creditPoints,
         isGpa: subjects.isGpa,
         yearNumber: semesters.yearNumber,
+        semesterNumber: semesters.semesterNumber,
         semesterId: subjects.semesterId,
       })
       .from(results)
@@ -72,7 +73,13 @@ export async function GET(request: NextRequest) {
       string,
       {
         grades: { grade: string }[];
-        byYear: Map<number, { gp: number; cp: number }[]>;
+        byYear: Map<
+          number,
+          Map<
+            number,
+            { gp: number; cp: number }[]
+          >
+        >;
         semesterIds: Set<number>;
       }
     >();
@@ -93,9 +100,13 @@ export async function GET(request: NextRequest) {
       if (!row.isGpa) continue;
 
       if (!studentData.byYear.has(row.yearNumber)) {
-        studentData.byYear.set(row.yearNumber, []);
+        studentData.byYear.set(row.yearNumber, new Map());
       }
-      studentData.byYear.get(row.yearNumber)!.push({
+      const semMap = studentData.byYear.get(row.yearNumber)!;
+      if (!semMap.has(row.semesterNumber)) {
+        semMap.set(row.semesterNumber, []);
+      }
+      semMap.get(row.semesterNumber)!.push({
         gp: Number(row.gradePoint),
         cp: row.creditPoints,
       });
@@ -139,10 +150,28 @@ export async function GET(request: NextRequest) {
       }
 
       const yearGPAs = Array.from(data.byYear.entries()).map(
-        ([year, yearResults]) => ({
-          year,
-          gpa: calcGPA(yearResults),
-        })
+        ([year, semMap]) => {
+          let yearDivisor = 0;
+          const yearResults: { gp: number; cp: number }[] = [];
+          
+          Array.from(semMap.entries()).forEach(([semNum, semResults]) => {
+            const absSem = (year - 1) * 2 + semNum;
+            const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+            if (semResults.length > 0) {
+              if (fixedSemCredits !== undefined) {
+                yearDivisor += fixedSemCredits;
+              } else {
+                yearDivisor += semResults.reduce((sum, s) => sum + s.cp, 0);
+              }
+              yearResults.push(...semResults);
+            }
+          });
+
+          return {
+            year,
+            gpa: calcGPA(yearResults, yearDivisor),
+          };
+        }
       );
 
       const fgpa = calcFGPA(yearGPAs);
