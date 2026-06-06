@@ -396,7 +396,7 @@ function StudentsPageContent() {
 
 export default function StudentsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-slate-950">
       <AdminSidebar />
 
       <main className="lg:ml-64 min-h-screen">

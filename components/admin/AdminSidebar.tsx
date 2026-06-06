@@ -66,7 +66,7 @@ export function AdminSidebar() {
       {/* ── Branding ──────────────────────────────────────────────────── */}
       <div className="px-5 pt-6 pb-6 border-b border-slate-700/50">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
             <span className="text-white font-bold text-lg">C</span>
           </div>
           <div className="min-w-0">
@@ -95,7 +95,7 @@ export function AdminSidebar() {
                 transition-all duration-200
                 ${
                   active
-                    ? "bg-gradient-to-r from-blue-600/20 to-indigo-600/20 text-blue-400 border border-blue-500/20 shadow-sm shadow-blue-500/5"
+                    ? "bg-blue-600/20 text-blue-400 border border-blue-500/20 shadow-sm shadow-blue-500/5"
                     : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }
               `}

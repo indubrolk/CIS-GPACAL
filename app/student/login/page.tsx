@@ -69,11 +69,11 @@ export default function StudentLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-950">
       {/* ── Branding Header ─────────────────────────────────────────────── */}
       <header className="w-full py-6 px-4 text-center">
         <div className="inline-flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">C</span>
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function StudentLoginPage() {
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
         <Card className="w-full max-w-md border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl shadow-emerald-500/5">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
               <GraduationCap className="h-7 w-7 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-white">
@@ -178,7 +178,7 @@ export default function StudentLoginPage() {
                 id="student-login-submit"
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-emerald-500/30"
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-emerald-500/30"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">

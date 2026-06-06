@@ -295,7 +295,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-slate-950">
       <AdminSidebar />
       <main className="lg:ml-64 min-h-screen">
         <div className="px-4 sm:px-6 lg:px-8 py-8 pt-16 lg:pt-8 max-w-7xl mx-auto">
@@ -327,7 +327,7 @@ export default function DashboardPage() {
               title="Total Students"
               value={stats?.totalStudents ?? 0}
               icon={GraduationCap}
-              gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+              gradient="bg-blue-600"
               shadow="shadow-blue-500/25"
               loading={loading}
             />
@@ -335,7 +335,7 @@ export default function DashboardPage() {
               title="Total Subjects"
               value={stats?.totalSubjects ?? 0}
               icon={BookOpen}
-              gradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
+              gradient="bg-emerald-600"
               shadow="shadow-emerald-500/25"
               loading={loading}
             />
@@ -343,7 +343,7 @@ export default function DashboardPage() {
               title="Results Entered"
               value={stats?.totalResults ?? 0}
               icon={ClipboardList}
-              gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+              gradient="bg-purple-600"
               shadow="shadow-purple-500/25"
               loading={loading}
             />
@@ -351,7 +351,7 @@ export default function DashboardPage() {
               title="Students at Risk"
               value={stats?.studentsAtRisk ?? 0}
               icon={AlertTriangle}
-              gradient="bg-gradient-to-br from-red-500 to-red-600"
+              gradient="bg-red-600"
               shadow="shadow-red-500/25"
               onClick={() => router.push("/admin/students?filter=at-risk")}
               loading={loading}
@@ -362,7 +362,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-3 mb-8">
             <button
               onClick={() => router.push("/admin/upload")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-medium shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200"
             >
               <Upload size={16} />
               Upload New Results
