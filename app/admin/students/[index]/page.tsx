@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   Calculator,
+  KeyRound,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -139,8 +140,44 @@ export default function StudentDetailPage() {
   const [student, setStudent] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [resetting, setResetting] = useState(false);
   const [openYears, setOpenYears] = useState<Set<number>>(new Set());
   const [openSemesters, setOpenSemesters] = useState<Set<string>>(new Set());
+
+  const handleResetPassword = async () => {
+    const confirmReset = window.confirm(
+      `Are you sure you want to reset the password for student ${indexNumber} to the default password '123456789'?`
+    );
+    if (!confirmReset) return;
+
+    setResetting(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(
+        `/api/admin/students/${encodeURIComponent(indexNumber)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to reset password");
+      }
+
+      setSuccess(data.message || "Password reset successfully!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchStudent() {
@@ -220,8 +257,21 @@ export default function StudentDetailPage() {
 
           {/* ── Error ───────────────────────────────────────────────── */}
           {error && (
-            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
               {error}
+            </div>
+          )}
+
+          {/* ── Success ─────────────────────────────────────────────── */}
+          {success && (
+            <div className="mb-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex justify-between items-center">
+              <span>{success}</span>
+              <button
+                onClick={() => setSuccess("")}
+                className="text-xs hover:underline text-emerald-500 hover:text-emerald-400"
+              >
+                Dismiss
+              </button>
             </div>
           )}
 
@@ -246,6 +296,27 @@ export default function StudentDetailPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
+                    {/* Reset Password Button */}
+                    <button
+                      onClick={handleResetPassword}
+                      disabled={resetting}
+                      className="
+                        inline-flex items-center gap-1.5 px-3 py-2 rounded-lg
+                        text-xs font-semibold
+                        bg-amber-500/10 border border-amber-500/20 text-amber-400
+                        hover:bg-amber-500/20 hover:text-amber-300
+                        disabled:opacity-50 disabled:cursor-not-allowed
+                        transition-all duration-200
+                      "
+                    >
+                      {resetting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <KeyRound className="h-3.5 w-3.5" />
+                      )}
+                      Reset Password
+                    </button>
+
                     {/* FGPA Badge */}
                     <div
                       className={`px-4 py-2 rounded-xl border ${classColor.bg} ${classColor.border} shadow-lg ${classColor.glow}`}

@@ -584,6 +584,55 @@ export default function StudentDashboardPage() {
               </Card>
             </div>
 
+            {/* ── Degree Classification Targets ────────────────────────── */}
+            <section>
+              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span>🎯</span> GPA Targets &amp; Classifications
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: "First Class", min: 3.70, textColors: "text-amber-400", activeBg: "bg-amber-500/20", borderColors: "border-amber-500/40", solidBg: "bg-amber-400", badgeClass: "border-amber-500/30 text-amber-300", icon: <Star className="h-5 w-5 mb-1.5" /> },
+                  { label: "Second Upper", min: 3.30, textColors: "text-slate-300", activeBg: "bg-slate-500/20", borderColors: "border-slate-500/40", solidBg: "bg-slate-300", badgeClass: "border-slate-500/30 text-slate-200", icon: <Triangle className="h-5 w-5 mb-1.5" /> },
+                  { label: "Second Lower", min: 2.70, textColors: "text-orange-400", activeBg: "bg-orange-500/20", borderColors: "border-orange-500/40", solidBg: "bg-orange-400", badgeClass: "border-orange-500/30 text-orange-300", icon: <Diamond className="h-5 w-5 mb-1.5" /> },
+                  { label: "Pass", min: 2.00, textColors: "text-emerald-400", activeBg: "bg-emerald-500/20", borderColors: "border-emerald-500/40", solidBg: "bg-emerald-400", badgeClass: "border-emerald-500/30 text-emerald-300", icon: <Check className="h-5 w-5 mb-1.5" /> },
+                ].map((cls, idx) => {
+                  const thresholds = [3.70, 3.30, 2.70, 2.00];
+                  const isCurrent = data.fgpa >= cls.min && (idx === 0 || data.fgpa < thresholds[idx - 1]);
+                  const isAchieved = data.fgpa >= cls.min;
+                  
+                  return (
+                    <Card key={idx} className={`relative overflow-hidden transition-all duration-300 ${isCurrent ? `${cls.borderColors} ${cls.activeBg} scale-[1.02] shadow-lg` : "border-slate-700/50 bg-slate-800/60 opacity-80 hover:opacity-100"}`}>
+                      {isCurrent && <div className={`absolute top-0 left-0 w-full h-1 ${cls.solidBg}`} />}
+                      <CardContent className="flex flex-col items-center justify-center p-5 text-center">
+                        <div className={isCurrent ? cls.textColors : "text-slate-400"}>
+                          {cls.icon}
+                        </div>
+                        <span className={`text-sm font-bold ${isCurrent ? cls.textColors : "text-slate-300"}`}>{cls.label}</span>
+                        <span className="text-xs text-slate-500 font-mono mt-1">GPA ≥ {cls.min.toFixed(2)}</span>
+                        
+                        <div className="mt-3 h-6 flex items-center justify-center">
+                          {isCurrent ? (
+                            <Badge className={`text-[10px] uppercase px-2 py-0.5 border ${cls.badgeClass} bg-transparent`}>
+                              Current Level
+                            </Badge>
+                          ) : !isAchieved ? (
+                            <span className="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-1 rounded-md border border-slate-700 flex items-center">
+                              <span className="text-red-400 mr-1 font-bold">↑</span>
+                              {(cls.min - data.fgpa).toFixed(2)} to go
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-emerald-500/70 flex items-center gap-1">
+                              <Check className="h-3 w-3" /> Cleared
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+
             {/* ── Recommendations Section ────────────────────────────── */}
             {data.recommendations.length > 0 && (
               <section>
