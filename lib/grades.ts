@@ -59,15 +59,27 @@ export function calcGPA(
   return Math.round((totalWeighted / divisor) * 100) / 100;
 }
 
-// ─── Final GPA Calculation ──────────────────────────────────────────────────
-
 /**
- * Calculate Final GPA (FGPA) from yearly GPAs.
- * FGPA = (Y1×0.20 + Y2×0.20 + Y3×0.30 + Y4×0.30) / (sum of weights of completed years)
+ * Calculate Final GPA (FGPA) from yearly GPAs or all subjects results.
+ * If not all 8 semesters have results, we calculate it as a simple cumulative GPA of all GPA subjects.
+ * Otherwise, we use the weighted yearly formula: (Y1×0.20 + Y2×0.20 + Y3×0.30 + Y4×0.30).
  */
 export function calcFGPA(
-  yearGPAs: { year: number; gpa: number }[]
+  yearGPAs: { year: number; gpa: number }[],
+  allGpaSubjects: { gp: number; cp: number }[],
+  semestersCount: number
 ): number {
+  if (semestersCount < 8) {
+    if (allGpaSubjects.length === 0) return 0;
+    const totalWeighted = allGpaSubjects.reduce(
+      (sum, r) => sum + r.gp * r.cp,
+      0
+    );
+    const totalCredits = allGpaSubjects.reduce((sum, r) => sum + r.cp, 0);
+    if (totalCredits === 0) return 0;
+    return Math.round((totalWeighted / totalCredits) * 100) / 100;
+  }
+
   if (yearGPAs.length === 0) return 0;
 
   let totalWeight = 0;

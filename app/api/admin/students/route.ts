@@ -174,7 +174,13 @@ export async function GET(request: NextRequest) {
         }
       );
 
-      const fgpa = calcFGPA(yearGPAs);
+      const allGpaSubjects: { gp: number; cp: number }[] = [];
+      Array.from(data.byYear.values()).forEach((semMap) => {
+        Array.from(semMap.values()).forEach((semResults) => {
+          allGpaSubjects.push(...semResults);
+        });
+      });
+      const fgpa = calcFGPA(yearGPAs, allGpaSubjects, data.semesterIds.size);
       const degreeClass = getClass(fgpa);
       const passed = isPass(data.grades, fgpa);
 
