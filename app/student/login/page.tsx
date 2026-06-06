@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { GraduationCap, Loader2, Eye, EyeOff, Info, Home } from "lucide-react";
+import { GraduationCap, Loader2, Eye, EyeOff, Info } from "lucide-react";
 
 export default function StudentLoginPage() {
   const [indexNumber, setIndexNumber] = useState("");
@@ -191,20 +190,6 @@ export default function StudentLoginPage() {
                 )}
               </Button>
 
-              {/* Back to Home */}
-              <div className="pt-2 text-center">
-                <Link href="/">
-                  <Button
-                    id="student-back-home"
-                    type="button"
-                    variant="ghost"
-                    className="w-full h-10 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all duration-200 gap-2"
-                  >
-                    <Home className="h-4 w-4" />
-                    Back to Home
-                  </Button>
-                </Link>
-              </div>
             </form>
           </CardContent>
         </Card>

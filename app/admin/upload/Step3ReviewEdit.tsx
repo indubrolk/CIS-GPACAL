@@ -18,7 +18,7 @@ import {
 import { GRADE_POINTS } from "@/lib/grades";
 
 const ALL_GRADES = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "E", "AB"];
-const INDEX_PATTERN = /^\d{2}[A-Z]{2,3}\d{4,5}$/;
+const INDEX_PATTERN = /^\d{2}[A-Z]{2,4}\d{3,5}$/;
 
 interface StudentRow {
   id: string;

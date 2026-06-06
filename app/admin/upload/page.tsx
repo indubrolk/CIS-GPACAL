@@ -96,6 +96,7 @@ export default function UploadPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subjectId,
+          examType: formData.examType,
           uploadMeta: {
             filename: uploadedFile?.name || "unknown.md",
             semesterLabel,

@@ -57,6 +57,89 @@ function ConfirmationDialog({
   );
 }
 
+// Delete All Dialog Component
+function DeleteAllDialog({
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  onConfirm: (deleteStudents: boolean) => void;
+  onCancel: () => void;
+}) {
+  const [deleteStudents, setDeleteStudents] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  if (!open) return null;
+
+  return (
+    <dialog open className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+      <div className="bg-slate-800 rounded-xl p-6 w-96 shadow-2xl border border-red-500/30">
+        <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <Trash2 className="text-red-500 h-5 w-5" />
+          Reset Database
+        </h3>
+        <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+          Are you sure you want to delete <strong>ALL student results</strong> and <strong>upload logs</strong>? This action is irreversible.
+        </p>
+        
+        {/* Checkbox option */}
+        <label className="flex items-center space-x-3 mb-5 cursor-pointer text-slate-300 select-none">
+          <input
+            type="checkbox"
+            checked={deleteStudents}
+            onChange={(e) => setDeleteStudents(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500/50"
+          />
+          <span className="text-sm">Also delete all student accounts</span>
+        </label>
+
+        {/* Safety confirmation text field */}
+        <div className="mb-6">
+          <p className="text-xs text-slate-400 mb-1.5 font-medium">
+            Type <span className="font-semibold text-red-400 select-all">DELETE</span> to confirm:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            className="w-full h-9 bg-slate-900 border border-slate-700 rounded-lg px-3 text-sm text-white focus:outline-none focus:border-red-500 font-mono tracking-wider"
+            placeholder="DELETE"
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => {
+              setDeleteStudents(false);
+              setConfirmText("");
+              onCancel();
+            }}
+            className="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 hover:bg-slate-600 transition text-xs font-semibold"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={confirmText !== "DELETE"}
+            onClick={() => {
+              onConfirm(deleteStudents);
+              setDeleteStudents(false);
+              setConfirmText("");
+            }}
+            className={`px-4 py-2 rounded-lg text-white text-xs font-semibold transition ${
+              confirmText === "DELETE"
+                ? "bg-red-600 hover:bg-red-500 shadow-lg shadow-red-600/20"
+                : "bg-red-950/30 text-red-500/50 cursor-not-allowed border border-red-900/20"
+            }`}
+          >
+            Delete Everything
+          </button>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface RecentUpload {
   id: number;
@@ -151,6 +234,31 @@ export default function DashboardPage() {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedUploadId, setSelectedUploadId] = useState<number | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+
+  const deleteAllResults = async (deleteStudents: boolean) => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/results/delete-all", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteStudents }),
+      });
+      if (!res.ok) throw new Error("Failed to delete all results");
+      const data = await res.json();
+      alert(
+        `Database Reset Complete!\nDeleted ${data.deleted.results} results, ${data.deleted.uploads} uploads${
+          deleteStudents ? `, and ${data.deleted.students} student accounts` : ""
+        }.`
+      );
+      await fetchStats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Reset database error");
+    } finally {
+      setDeleteAllOpen(false);
+      setLoading(false);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -266,6 +374,13 @@ export default function DashboardPage() {
               <Users size={16} />
               Browse Students
             </button>
+            <button
+              onClick={() => setDeleteAllOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-950/45 hover:bg-red-900/60 border border-red-800/40 text-red-200 hover:text-white text-sm font-medium transition-all duration-200"
+            >
+              <Trash2 size={16} />
+              Reset Database / Delete All Results
+            </button>
           </div>
 
           {/* Recent Uploads */}
@@ -326,6 +441,12 @@ export default function DashboardPage() {
         message="Are you sure you want to delete this result sheet? This action cannot be undone."
         onConfirm={() => selectedUploadId && deleteUpload(selectedUploadId)}
         onCancel={() => setConfirmOpen(false)}
+      />
+      {/* Delete All Confirmation Dialog */}
+      <DeleteAllDialog
+        open={deleteAllOpen}
+        onConfirm={deleteAllResults}
+        onCancel={() => setDeleteAllOpen(false)}
       />
     </div>
   );

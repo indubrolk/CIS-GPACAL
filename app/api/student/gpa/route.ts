@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { results, subjects, semesters } from "@/lib/schema";
 import { getStudentFromRequest } from "@/lib/studentAuth";
-import { calcGPA, calcFGPA, getClass, isPass } from "@/lib/grades";
+import { calcGPA, calcFGPA, getClass, isPass, SEMESTER_TOTAL_CREDITS } from "@/lib/grades";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ interface YearData {
 // ─── Recommendation Generator ───────────────────────────────────────────────
 
 function generateRecommendations(
-  allSubjects: { grade: string; subjectCode: string }[],
+  allSubjects: { grade: string; subjectCode: string; subjectName: string }[],
   fgpa: number,
   hasResults: boolean
 ): string[] {
@@ -47,13 +47,23 @@ function generateRecommendations(
     return ["📋 No results have been uploaded yet. Check back later."];
   }
 
-  // Failed subjects (E or AB)
-  const failedSubjects = allSubjects.filter(
-    (s) => s.grade === "E" || s.grade === "AB"
+  // Must rewrite: D, E, or AB grades (less than D+)
+  const mustRewrite = allSubjects.filter(
+    (s) => s.grade === "D" || s.grade === "E" || s.grade === "AB"
   );
-  for (const s of failedSubjects) {
+  for (const s of mustRewrite) {
     recommendations.push(
-      `⚠️ You have a failed subject (${s.subjectCode}). Consider applying for a repeat examination.`
+      `🚨 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. You have to write this exam again.`
+    );
+  }
+
+  // Consider rewriting: C- or D+ grades
+  const considerRewrite = allSubjects.filter(
+    (s) => s.grade === "C-" || s.grade === "D+"
+  );
+  for (const s of considerRewrite) {
+    recommendations.push(
+      `💡 ${s.subjectCode} (${s.subjectName}) — Grade: ${s.grade}. If you can, rewrite this exam again to improve your GPA.`
     );
   }
 
@@ -197,18 +207,21 @@ export async function GET(request: NextRequest) {
           .map(([semesterNumber, semData]) => {
             // Only include GPA subjects in GPA calculation
             const gpaSubjects = semData.subjects.filter((s) => s.isGpa);
+            const absSem = (yearNumber - 1) * 2 + semesterNumber;
+            const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
             const semesterGPA = calcGPA(
               gpaSubjects.map((s) => ({
                 gp: s.gradePoint,
                 cp: s.creditPoints,
-              }))
+              })),
+              fixedSemCredits
             );
 
             if (semesterGPA > bestSemesterGPA) {
               bestSemesterGPA = semesterGPA;
             }
 
-            totalSubjects += semData.subjects.length;
+            totalSubjects += semData.subjects.filter(s => s.isGpa).length;
             // Only count GPA subject credits toward totalCredits
             totalCredits += gpaSubjects.reduce(
               (sum, s) => sum + s.creditPoints,
@@ -238,11 +251,29 @@ export async function GET(request: NextRequest) {
         const allYearGpaSubjects = semesterEntries
           .flatMap((s) => s.subjects)
           .filter((s) => s.isGpa);
+        
+        let yearDivisor = 0;
+        for (const sem of semesterEntries) {
+          const absSem = (yearNumber - 1) * 2 + sem.semesterNumber;
+          const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+          const hasGpaSubjects = sem.subjects.some((s) => s.isGpa);
+          if (hasGpaSubjects) {
+            if (fixedSemCredits !== undefined) {
+              yearDivisor += fixedSemCredits;
+            } else {
+              yearDivisor += sem.subjects
+                .filter((s) => s.isGpa)
+                .reduce((sum, s) => sum + s.creditPoints, 0);
+            }
+          }
+        }
+
         const yearGPA = calcGPA(
           allYearGpaSubjects.map((s) => ({
             gp: s.gradePoint,
             cp: s.creditPoints,
-          }))
+          })),
+          yearDivisor
         );
 
         yearGPAs.push({ year: yearNumber, gpa: yearGPA });
@@ -255,10 +286,24 @@ export async function GET(request: NextRequest) {
       });
 
     // ── Calculate FGPA and classification ────────────────────────────────
-    const fgpa = calcFGPA(yearGPAs);
+    const semestersWithResults = years.reduce(
+      (sum, y) => sum + y.semesters.length,
+      0
+    );
+    const allGpaSubjects = rows
+      .filter((r) => r.isGpa)
+      .map((r) => ({
+        gp: Number(r.gradePoint),
+        cp: r.creditPoints,
+      }));
+    const fgpa = calcFGPA(yearGPAs, allGpaSubjects, semestersWithResults);
     const degreeClass = getClass(fgpa);
     const passed = isPass(
-      rows.map((r) => ({ grade: r.grade })),
+      rows.map((r) => ({ 
+        grade: r.grade,
+        isRepeat: r.isRepeat,
+        isGpa: r.isGpa
+      })),
       fgpa
     );
 
@@ -266,6 +311,7 @@ export async function GET(request: NextRequest) {
     const allSubjectsFlat = rows.map((r) => ({
       grade: r.grade,
       subjectCode: r.subjectCode,
+      subjectName: r.subjectName,
     }));
     const recommendations = generateRecommendations(
       allSubjectsFlat,

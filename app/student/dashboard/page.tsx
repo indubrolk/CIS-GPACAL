@@ -44,6 +44,7 @@ import {
   Diamond,
   Check,
   X,
+  User,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -105,6 +106,26 @@ function getGradeColor(grade: string): string {
   return colors[grade] || "bg-slate-500/20 text-slate-300 border-slate-500/30";
 }
 
+// ─── Grade Hint (inline advice per subject) ─────────────────────────────────
+
+function getGradeHint(grade: string): { text: string; color: string } | null {
+  // Must write again: D, E, AB (less than D+)
+  if (grade === "D" || grade === "E" || grade === "AB") {
+    return {
+      text: grade === "D" ? "Have to write again" : grade === "E" ? "Failed — Write again" : "Absent — Write again",
+      color: "bg-red-500/15 text-red-400 border-red-500/25",
+    };
+  }
+  // Rewrite if you can: C-, D+
+  if (grade === "C-" || grade === "D+") {
+    return {
+      text: "Rewrite if you can",
+      color: "bg-amber-500/15 text-amber-400 border-amber-500/25",
+    };
+  }
+  return null;
+}
+
 // ─── Class Tier Styling ─────────────────────────────────────────────────────
 
 function getClassTier(degreeClass: string) {
@@ -160,7 +181,7 @@ function getRecommendationVariant(
   text: string
 ): "destructive" | "warning" | "info" | "success" | "default" {
   if (text.startsWith("🚨")) return "destructive";
-  if (text.startsWith("⚠️")) return "warning";
+  if (text.startsWith("⚠️") || text.startsWith("💡")) return "warning";
   if (text.startsWith("📈") || text.startsWith("📘") || text.startsWith("⭐"))
     return "info";
   if (text.startsWith("🏆")) return "success";
@@ -210,8 +231,14 @@ function DashboardSkeleton() {
 
 // ─── Main Dashboard Component ───────────────────────────────────────────────
 
+interface StudentProfile {
+  fullName: string | null;
+  indexNumber: string;
+}
+
 export default function StudentDashboardPage() {
   const [data, setData] = useState<GPAResponse | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -222,19 +249,25 @@ export default function StudentDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/student/gpa", {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
+      const [gpaRes, profileRes] = await Promise.all([
+        fetch("/api/student/gpa", { cache: "no-store" }),
+        fetch("/api/student/profile", { cache: "no-store" }),
+      ]);
+      if (!gpaRes.ok) {
+        if (gpaRes.status === 401) {
           router.push("/student/login");
           return;
         }
-        const errData = await res.json().catch(() => null);
+        const errData = await gpaRes.json().catch(() => null);
         throw new Error(errData?.error || "Failed to fetch GPA data");
       }
-      const json = await res.json();
+      const json = await gpaRes.json();
       setData(json);
+
+      if (profileRes.ok) {
+        const profileJson = await profileRes.json();
+        setProfile(profileJson);
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred"
@@ -283,8 +316,24 @@ export default function StudentDashboardPage() {
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-sm text-slate-300"
             >
-              <span className="font-mono text-xs sm:text-sm text-emerald-400">
-                {data?.indexNumber || "Loading…"}
+              {/* Avatar circle */}
+              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-bold text-white">
+                  {profile?.fullName
+                    ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                    : data?.indexNumber?.slice(0, 2).toUpperCase() || "?"}
+                </span>
+              </div>
+              <div className="hidden sm:flex flex-col items-start leading-tight">
+                <span className="text-xs font-medium text-white truncate max-w-[140px]">
+                  {profile?.fullName || "Student"}
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400">
+                  {data?.indexNumber || "Loading…"}
+                </span>
+              </div>
+              <span className="sm:hidden font-mono text-xs text-emerald-400">
+                {data?.indexNumber || "…"}
               </span>
               <ChevronDown
                 className={`h-3.5 w-3.5 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
@@ -300,6 +349,17 @@ export default function StudentDashboardPage() {
                 />
                 {/* Dropdown menu */}
                 <div className="absolute right-0 mt-1 w-48 rounded-lg border border-slate-700/50 bg-slate-800 shadow-xl z-50 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <button
+                    id="menu-profile"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/student/profile");
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50 transition-colors"
+                  >
+                    <User className="h-4 w-4" />
+                    My Profile
+                  </button>
                   <button
                     id="menu-change-password"
                     onClick={() => {
@@ -353,10 +413,27 @@ export default function StudentDashboardPage() {
         ) : data ? (
           <>
             {/* ── Page Header ────────────────────────────────────────── */}
-            <div className="flex items-center justify-between pb-2">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">Student Dashboard</h1>
-                <p className="text-slate-400 text-xs sm:text-sm mt-0.5">Your academic performance overview</p>
+            {/* ── Student Welcome Banner ─────────────────────────── */}
+            <div className="flex items-center gap-4 pb-4 mb-2 border-b border-slate-700/30">
+              {/* Avatar */}
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                <span className="text-xl font-bold text-white">
+                  {profile?.fullName
+                    ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                    : data?.indexNumber?.slice(0, 2).toUpperCase() || "?"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
+                  {profile?.fullName ? `Welcome, ${profile.fullName}` : "Student Dashboard"}
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/25 font-mono text-[11px] px-2 py-0.5">
+                    {data.indexNumber}
+                  </Badge>
+                  <span className="text-slate-500 text-xs">•</span>
+                  <p className="text-slate-400 text-xs sm:text-sm">Your academic performance overview</p>
+                </div>
               </div>
               <Button
                 onClick={fetchGPA}
@@ -495,6 +572,55 @@ export default function StudentDashboardPage() {
               </Card>
             </div>
 
+            {/* ── Degree Classification Targets ────────────────────────── */}
+            <section>
+              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span>🎯</span> GPA Targets &amp; Classifications
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: "First Class", min: 3.70, textColors: "text-amber-400", activeBg: "bg-amber-500/20", borderColors: "border-amber-500/40", solidBg: "bg-amber-400", badgeClass: "border-amber-500/30 text-amber-300", icon: <Star className="h-5 w-5 mb-1.5" /> },
+                  { label: "Second Upper", min: 3.30, textColors: "text-slate-300", activeBg: "bg-slate-500/20", borderColors: "border-slate-500/40", solidBg: "bg-slate-300", badgeClass: "border-slate-500/30 text-slate-200", icon: <Triangle className="h-5 w-5 mb-1.5" /> },
+                  { label: "Second Lower", min: 2.70, textColors: "text-orange-400", activeBg: "bg-orange-500/20", borderColors: "border-orange-500/40", solidBg: "bg-orange-400", badgeClass: "border-orange-500/30 text-orange-300", icon: <Diamond className="h-5 w-5 mb-1.5" /> },
+                  { label: "Pass", min: 2.00, textColors: "text-emerald-400", activeBg: "bg-emerald-500/20", borderColors: "border-emerald-500/40", solidBg: "bg-emerald-400", badgeClass: "border-emerald-500/30 text-emerald-300", icon: <Check className="h-5 w-5 mb-1.5" /> },
+                ].map((cls, idx) => {
+                  const thresholds = [3.70, 3.30, 2.70, 2.00];
+                  const isCurrent = data.fgpa >= cls.min && (idx === 0 || data.fgpa < thresholds[idx - 1]);
+                  const isAchieved = data.fgpa >= cls.min;
+                  
+                  return (
+                    <Card key={idx} className={`relative overflow-hidden transition-all duration-300 ${isCurrent ? `${cls.borderColors} ${cls.activeBg} scale-[1.02] shadow-lg` : "border-slate-700/50 bg-slate-800/60 opacity-80 hover:opacity-100"}`}>
+                      {isCurrent && <div className={`absolute top-0 left-0 w-full h-1 ${cls.solidBg}`} />}
+                      <CardContent className="flex flex-col items-center justify-center p-5 text-center">
+                        <div className={isCurrent ? cls.textColors : "text-slate-400"}>
+                          {cls.icon}
+                        </div>
+                        <span className={`text-sm font-bold ${isCurrent ? cls.textColors : "text-slate-300"}`}>{cls.label}</span>
+                        <span className="text-xs text-slate-500 font-mono mt-1">GPA ≥ {cls.min.toFixed(2)}</span>
+                        
+                        <div className="mt-3 h-6 flex items-center justify-center">
+                          {isCurrent ? (
+                            <Badge className={`text-[10px] uppercase px-2 py-0.5 border ${cls.badgeClass} bg-transparent`}>
+                              Current Level
+                            </Badge>
+                          ) : !isAchieved ? (
+                            <span className="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-1 rounded-md border border-slate-700 flex items-center">
+                              <span className="text-red-400 mr-1 font-bold">↑</span>
+                              {(cls.min - data.fgpa).toFixed(2)} to go
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-emerald-500/70 flex items-center gap-1">
+                              <Check className="h-3 w-3" /> Cleared
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+
             {/* ── Recommendations Section ────────────────────────────── */}
             {data.recommendations.length > 0 && (
               <section>
@@ -618,15 +744,22 @@ export default function StudentDashboardPage() {
                                             </div>
                                           </TableCell>
                                           <TableCell className="text-center py-2.5">
-                                            <div className="inline-flex items-center gap-1.5">
-                                              <Badge
-                                                className={`${getGradeColor(subj.grade)} border text-xs font-mono`}
-                                              >
-                                                {subj.grade}
-                                              </Badge>
-                                              {subj.isRepeat && (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
-                                                  Repeat
+                                            <div className="inline-flex flex-col items-center gap-1">
+                                              <div className="inline-flex items-center gap-1.5">
+                                                <Badge
+                                                  className={`${getGradeColor(subj.grade)} border text-xs font-mono`}
+                                                >
+                                                  {subj.grade}
+                                                </Badge>
+                                                {subj.isRepeat && (
+                                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
+                                                    Repeat
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {getGradeHint(subj.grade) && (
+                                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${getGradeHint(subj.grade)!.color}`}>
+                                                  {getGradeHint(subj.grade)!.text}
                                                 </span>
                                               )}
                                             </div>
