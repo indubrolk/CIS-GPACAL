@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { students, subjects, results, pdfUploads, semesters } from "@/lib/schema";
 import { getAdminFromRequest } from "@/lib/adminAuth";
-import { calcGPA, calcFGPA } from "@/lib/grades";
+import { calcGPA, calcFGPA, SEMESTER_TOTAL_CREDITS } from "@/lib/grades";
 import { eq, count, desc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -55,15 +55,22 @@ export async function GET(request: NextRequest) {
         creditPoints: subjects.creditPoints,
         isGpa: subjects.isGpa,
         yearNumber: semesters.yearNumber,
+        semesterNumber: semesters.semesterNumber,
       })
       .from(results)
       .innerJoin(subjects, eq(results.subjectId, subjects.id))
       .innerJoin(semesters, eq(subjects.semesterId, semesters.id));
 
-    // Group by student → year → compute FGPA (only GPA subjects)
+    // Group by student → year → semester → compute FGPA (only GPA subjects)
     const studentMap = new Map<
       string,
-      Map<number, { gp: number; cp: number }[]>
+      Map<
+        number,
+        Map<
+          number,
+          { gp: number; cp: number }[]
+        >
+      >
     >();
 
     for (const row of allResults) {
@@ -75,9 +82,13 @@ export async function GET(request: NextRequest) {
       }
       const yearMap = studentMap.get(row.studentIndex)!;
       if (!yearMap.has(row.yearNumber)) {
-        yearMap.set(row.yearNumber, []);
+        yearMap.set(row.yearNumber, new Map());
       }
-      yearMap.get(row.yearNumber)!.push({
+      const semMap = yearMap.get(row.yearNumber)!;
+      if (!semMap.has(row.semesterNumber)) {
+        semMap.set(row.semesterNumber, []);
+      }
+      semMap.get(row.semesterNumber)!.push({
         gp: Number(row.gradePoint),
         cp: row.creditPoints,
       });
@@ -86,8 +97,24 @@ export async function GET(request: NextRequest) {
     let studentsAtRisk = 0;
     studentMap.forEach((yearMap) => {
       const yearGPAs: { year: number; gpa: number }[] = [];
-      yearMap.forEach((yearResults, year) => {
-        yearGPAs.push({ year, gpa: calcGPA(yearResults) });
+      yearMap.forEach((semMap, year) => {
+        let yearDivisor = 0;
+        const yearResults: { gp: number; cp: number }[] = [];
+        
+        Array.from(semMap.entries()).forEach(([semNum, semResults]) => {
+          const absSem = (year - 1) * 2 + semNum;
+          const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
+          if (semResults.length > 0) {
+            if (fixedSemCredits !== undefined) {
+              yearDivisor += fixedSemCredits;
+            } else {
+              yearDivisor += semResults.reduce((sum, s) => sum + s.cp, 0);
+            }
+            yearResults.push(...semResults);
+          }
+        });
+
+        yearGPAs.push({ year, gpa: calcGPA(yearResults, yearDivisor) });
       });
       const fgpa = calcFGPA(yearGPAs);
       if (fgpa < 2.0) {
