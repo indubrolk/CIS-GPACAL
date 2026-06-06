@@ -96,12 +96,16 @@ export async function GET(request: NextRequest) {
 
     let studentsAtRisk = 0;
     studentMap.forEach((yearMap) => {
+      let semestersCount = 0;
+      const allGpaSubjects: { gp: number; cp: number }[] = [];
       const yearGPAs: { year: number; gpa: number }[] = [];
+
       yearMap.forEach((semMap, year) => {
         let yearDivisor = 0;
         const yearResults: { gp: number; cp: number }[] = [];
         
         Array.from(semMap.entries()).forEach(([semNum, semResults]) => {
+          semestersCount++;
           const absSem = (year - 1) * 2 + semNum;
           const fixedSemCredits = SEMESTER_TOTAL_CREDITS[absSem];
           if (semResults.length > 0) {
@@ -111,12 +115,14 @@ export async function GET(request: NextRequest) {
               yearDivisor += semResults.reduce((sum, s) => sum + s.cp, 0);
             }
             yearResults.push(...semResults);
+            allGpaSubjects.push(...semResults);
           }
         });
 
         yearGPAs.push({ year, gpa: calcGPA(yearResults, yearDivisor) });
       });
-      const fgpa = calcFGPA(yearGPAs);
+
+      const fgpa = calcFGPA(yearGPAs, allGpaSubjects, semestersCount);
       if (fgpa < 2.0) {
         studentsAtRisk++;
       }

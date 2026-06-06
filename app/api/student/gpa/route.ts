@@ -286,7 +286,17 @@ export async function GET(request: NextRequest) {
       });
 
     // ── Calculate FGPA and classification ────────────────────────────────
-    const fgpa = calcFGPA(yearGPAs);
+    const semestersWithResults = years.reduce(
+      (sum, y) => sum + y.semesters.length,
+      0
+    );
+    const allGpaSubjects = rows
+      .filter((r) => r.isGpa)
+      .map((r) => ({
+        gp: Number(r.gradePoint),
+        cp: r.creditPoints,
+      }));
+    const fgpa = calcFGPA(yearGPAs, allGpaSubjects, semestersWithResults);
     const degreeClass = getClass(fgpa);
     const passed = isPass(
       rows.map((r) => ({ 

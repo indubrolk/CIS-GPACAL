@@ -160,7 +160,17 @@ export async function GET(
         };
       });
 
-    const fgpa = calcFGPA(yearGPAs);
+    const semestersWithResults = years.reduce(
+      (sum, y) => sum + y.semesters.length,
+      0
+    );
+    const allGpaSubjects = studentResults
+      .filter((r) => r.isGpa)
+      .map((r) => ({
+        gp: Number(r.gradePoint),
+        cp: r.creditPoints,
+      }));
+    const fgpa = calcFGPA(yearGPAs, allGpaSubjects, semestersWithResults);
     const degreeClass = getClass(fgpa);
     const isPassed = isPass(allGrades, fgpa);
 
