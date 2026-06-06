@@ -4,8 +4,6 @@ A full-stack, responsive GPA Calculator and Student Portal built using **Next.js
 
 ---
 
----
-
 
 ## 🚀 Features
 
