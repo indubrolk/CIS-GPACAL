@@ -171,11 +171,11 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-950">
       {/* ── Branding Header ─────────────────────────────────────────────── */}
       <header className="w-full py-6 px-4 text-center">
         <div className="inline-flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg bg-amber-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">C</span>
           </div>
           <div>
@@ -217,7 +217,7 @@ export default function ChangePasswordPage() {
 
           <Card className="w-full border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl shadow-amber-500/5">
             <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
+              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
                 <KeyRound className="h-7 w-7 text-white" />
               </div>
               <CardTitle className="text-2xl font-bold text-white">
@@ -401,7 +401,7 @@ export default function ChangePasswordPage() {
                   id="change-password-submit"
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full h-11 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-medium shadow-lg shadow-amber-500/20 transition-all duration-200 hover:shadow-amber-500/30 disabled:opacity-40 disabled:hover:shadow-amber-500/20"
+                  className="w-full h-11 bg-amber-600 hover:bg-amber-500 text-white font-medium shadow-lg shadow-amber-500/20 transition-all duration-200 hover:shadow-amber-500/30 disabled:opacity-40 disabled:hover:shadow-amber-500/20"
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">

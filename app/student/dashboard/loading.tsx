@@ -2,13 +2,13 @@ import { GraduationCap } from "lucide-react";
 
 export default function StudentDashboardLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30 text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
       {/* Navbar Skeleton */}
       <nav className="sticky top-0 z-50 w-full border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Left: Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
               <GraduationCap className="h-4 w-4 text-white" />
             </div>
             <span className="text-sm font-semibold text-white tracking-tight hidden sm:inline">

@@ -111,53 +111,41 @@ function getClassTier(degreeClass: string) {
   switch (degreeClass) {
     case "First Class":
       return {
-        gradient: "from-amber-400 via-yellow-500 to-amber-600",
-        bgGlow: "shadow-amber-500/20",
         textColor: "text-amber-400",
-        progressColor: "bg-gradient-to-r from-amber-400 to-yellow-500",
+        progressColor: "bg-amber-500",
         icon: <Star className="h-5 w-5" />,
         label: "★ First Class Honours",
       };
     case "Second Class (Upper Division)":
       return {
-        gradient: "from-slate-300 via-gray-400 to-slate-500",
-        bgGlow: "shadow-slate-400/20",
         textColor: "text-slate-300",
-        progressColor: "bg-gradient-to-r from-slate-300 to-gray-400",
+        progressColor: "bg-slate-400",
         icon: <Triangle className="h-5 w-5" />,
         label: "▲ Second Class (Upper)",
       };
     case "Second Class (Lower Division)":
       return {
-        gradient: "from-orange-600 via-amber-700 to-orange-800",
-        bgGlow: "shadow-orange-500/20",
         textColor: "text-orange-400",
-        progressColor: "bg-gradient-to-r from-orange-500 to-amber-600",
+        progressColor: "bg-orange-500",
         icon: <Diamond className="h-5 w-5" />,
         label: "◆ Second Class (Lower)",
       };
     case "Pass":
       return {
-        gradient: "from-emerald-500 via-green-600 to-emerald-700",
-        bgGlow: "shadow-emerald-500/20",
         textColor: "text-emerald-400",
-        progressColor: "bg-gradient-to-r from-emerald-400 to-green-500",
+        progressColor: "bg-emerald-500",
         icon: <Check className="h-5 w-5" />,
         label: "✓ Pass",
       };
     case "Fail":
       return {
-        gradient: "from-red-500 via-red-600 to-red-700",
-        bgGlow: "shadow-red-500/20",
         textColor: "text-red-400",
-        progressColor: "bg-gradient-to-r from-red-400 to-red-500",
+        progressColor: "bg-red-500",
         icon: <X className="h-5 w-5" />,
         label: "✗ Fail",
       };
     default:
       return {
-        gradient: "from-slate-500 via-slate-600 to-slate-700",
-        bgGlow: "shadow-slate-500/20",
         textColor: "text-slate-400",
         progressColor: "bg-slate-500",
         icon: <GraduationCap className="h-5 w-5" />,
@@ -274,13 +262,13 @@ export default function StudentDashboardPage() {
   const tier = data ? getClassTier(data.degreeClass) : getClassTier("N/A");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
+    <div className="min-h-screen bg-slate-950">
       {/* ── Top Navbar ──────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 w-full border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Left: Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
               <GraduationCap className="h-4 w-4 text-white" />
             </div>
             <span className="text-sm font-semibold text-white tracking-tight hidden sm:inline">
@@ -385,9 +373,9 @@ export default function StudentDashboardPage() {
             {/* ── Hero GPA Card ──────────────────────────────────────── */}
             {hasResults ? (
               <Card
-                className={`border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl ${tier.bgGlow} overflow-hidden`}
+                className={`border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl overflow-hidden`}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-white/[0.02] pointer-events-none" />
                 <CardContent className="relative flex flex-col items-center gap-5 py-8 px-6">
                   <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">
                     Your Final GPA
@@ -396,7 +384,7 @@ export default function StudentDashboardPage() {
                   {/* FGPA Number */}
                   <div className="relative">
                     <span
-                      className={`text-6xl sm:text-7xl font-bold bg-gradient-to-r ${tier.gradient} bg-clip-text text-transparent`}
+                      className={`text-6xl sm:text-7xl font-bold ${tier.textColor}`}
                     >
                       {data.fgpa.toFixed(2)}
                     </span>
@@ -421,7 +409,7 @@ export default function StudentDashboardPage() {
 
                   {/* Class Badge */}
                   <div
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-gradient-to-r ${tier.gradient} border-white/20 text-white font-semibold text-sm shadow-lg`}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-slate-700/50 border-slate-600/50 ${tier.textColor} font-semibold text-sm shadow-lg`}
                   >
                     {tier.icon}
                     {tier.label}

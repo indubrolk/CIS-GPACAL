@@ -3,11 +3,11 @@ import { GraduationCap, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen flex flex-col bg-slate-950">
       {/* ── Hero Section ──────────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         {/* Logo */}
-        <div className="mb-6 h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/20">
+        <div className="mb-6 h-16 w-16 rounded-2xl bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/20">
           <span className="text-white font-bold text-2xl">C</span>
         </div>
 
@@ -20,7 +20,7 @@ export default function Home() {
         </p>
 
         {/* Divider */}
-        <div className="mt-10 mb-8 w-16 h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
+        <div className="mt-10 mb-8 w-16 h-px bg-slate-700" />
 
         {/* Login Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
@@ -29,7 +29,7 @@ export default function Home() {
             href="/student/login"
             className="group relative flex flex-col items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm p-8 shadow-lg transition-all duration-300 hover:border-emerald-500/40 hover:bg-slate-800/80 hover:shadow-emerald-500/10 hover:-translate-y-0.5"
           >
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform duration-300 group-hover:scale-110">
+            <div className="h-12 w-12 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform duration-300 group-hover:scale-110">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
             <span className="text-lg font-semibold text-white">Student</span>
@@ -41,7 +41,7 @@ export default function Home() {
             href="/admin/login"
             className="group relative flex flex-col items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm p-8 shadow-lg transition-all duration-300 hover:border-blue-500/40 hover:bg-slate-800/80 hover:shadow-blue-500/10 hover:-translate-y-0.5"
           >
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 transition-transform duration-300 group-hover:scale-110">
+            <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 transition-transform duration-300 group-hover:scale-110">
               <ShieldCheck className="h-6 w-6 text-white" />
             </div>
             <span className="text-lg font-semibold text-white">Admin</span>

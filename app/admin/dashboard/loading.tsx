@@ -2,7 +2,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
 export default function AdminDashboardLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-slate-950">
       <AdminSidebar />
 
       {/* Main Content Skeleton */}
