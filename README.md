@@ -71,8 +71,8 @@ npm run db:seed
 
 The database seeder initializes:
 - **Default Admin Account**:
-  - **Username**: `admin`
-  - **Password**: `admin123`
+  - **Username**: `Admin123`
+  - **Password**: `Admin123*`
 - **Academic Semesters**: Years 1-4, Semesters 1-2.
 
 ### 5. Running the Application
