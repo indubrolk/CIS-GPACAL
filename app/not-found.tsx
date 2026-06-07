@@ -10,7 +10,7 @@ export default function NotFound() {
       {/* Main Content */}
       <main className="flex flex-col items-center justify-center px-4 text-center">
         {/* Logo/Icon container */}
-        <div className="mb-6 h-20 w-20 rounded-2xl bg-red-500 flex items-center justify-center shadow-2xl shadow-red-500/20 animate-bounce">
+        <div className="mb-6 h-20 w-20 rounded-2xl bg-red-500 flex items-center justify-center shadow-2xl shadow-orange-500/20 animate-bounce">
           <FileQuestion className="h-10 w-10 text-white" />
         </div>
 
@@ -36,7 +36,7 @@ export default function NotFound() {
             className="
               inline-flex items-center gap-2 px-6 py-3 rounded-xl
               bg-blue-600
-              hover:bg-blue-500
+              hover:from-blue-500 hover:to-indigo-500
               text-white text-sm font-semibold
               shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30
               transition-all duration-200 hover:-translate-y-0.5

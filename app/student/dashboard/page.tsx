@@ -317,7 +317,7 @@ export default function StudentDashboardPage() {
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-sm text-slate-300"
             >
               {/* Avatar circle */}
-              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
                 <span className="text-[10px] font-bold text-white">
                   {profile?.fullName
                     ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
@@ -416,7 +416,7 @@ export default function StudentDashboardPage() {
             {/* ── Student Welcome Banner ─────────────────────────── */}
             <div className="flex items-center gap-4 pb-4 mb-2 border-b border-slate-700/30">
               {/* Avatar */}
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
                 <span className="text-xl font-bold text-white">
                   {profile?.fullName
                     ? profile.fullName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)

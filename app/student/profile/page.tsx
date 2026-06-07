@@ -82,7 +82,7 @@ function ProfileField({
   return (
     <div className="group relative">
       <div className="flex items-start gap-4 p-4 rounded-xl transition-all duration-200 hover:bg-slate-800/40">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-700/80 to-slate-800/80 border border-slate-600/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-emerald-500/30 transition-colors">
+        <div className="h-10 w-10 rounded-xl bg-slate-700/80 border border-slate-600/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:border-emerald-500/30 transition-colors">
           <Icon className="h-4.5 w-4.5 text-slate-400 group-hover:text-emerald-400 transition-colors" />
         </div>
         <div className="flex-1 min-w-0">
@@ -284,7 +284,7 @@ export default function StudentProfilePage() {
   const completionPercent = Math.round((filledCount / 7) * 100);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/30">
+    <div className="min-h-screen bg-slate-950">
       {/* ── Top Navbar ──────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 w-full border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -299,7 +299,7 @@ export default function StudentProfilePage() {
             </button>
             <div className="h-5 w-px bg-slate-700/50" />
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <div className="h-7 w-7 rounded-lg bg-emerald-600 flex items-center justify-center">
                 <User className="h-3.5 w-3.5 text-white" />
               </div>
               <span className="text-sm font-semibold text-white tracking-tight hidden sm:inline">
@@ -395,13 +395,13 @@ export default function StudentProfilePage() {
             {/* ── Profile Hero Card ──────────────────────────────────── */}
             <Card className="border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl shadow-emerald-500/5 overflow-hidden relative">
               {/* Background gradient accent */}
-              <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-emerald-600/20 via-teal-600/10 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-32 bg-emerald-600/10 pointer-events-none" />
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
               <CardContent className="relative flex flex-col items-center gap-4 pt-10 pb-8 px-6">
                 {/* Avatar */}
                 <div className="relative">
-                  <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/25 ring-4 ring-slate-800/80">
+                  <div className="h-24 w-24 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-500/25 ring-4 ring-slate-800/80">
                     <span className="text-3xl font-bold text-white">
                       {initials}
                     </span>
@@ -459,10 +459,10 @@ export default function StudentProfilePage() {
                     <div
                       className={`h-full transition-all duration-700 ease-out rounded-full ${
                         completionPercent === 100
-                          ? "bg-gradient-to-r from-emerald-400 to-teal-400"
+                          ? "bg-emerald-400"
                           : completionPercent >= 50
-                          ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                          : "bg-gradient-to-r from-amber-500 to-orange-500"
+                          ? "bg-emerald-500"
+                          : "bg-amber-500"
                       }`}
                       style={{ width: `${completionPercent}%` }}
                     />
@@ -514,7 +514,7 @@ export default function StudentProfilePage() {
                       id="save-profile-button"
                       onClick={saveProfile}
                       size="sm"
-                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
                       disabled={saving}
                     >
                       {saving ? (
@@ -530,7 +530,7 @@ export default function StudentProfilePage() {
 
               <CardContent className="pt-2">
                 {/* Divider */}
-                <div className="h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent mb-2" />
+                <div className="h-px bg-slate-700/50 mb-2" />
 
                 <div className="space-y-1">
                   {/* Index Number (read-only) */}

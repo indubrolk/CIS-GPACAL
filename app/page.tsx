@@ -3,51 +3,128 @@ import { GraduationCap, ShieldCheck } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* ── Hero Section ──────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-16">
-        {/* Logo */}
-        <div className="mb-6 h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/20">
-          <span className="text-white font-bold text-2xl">C</span>
+    <div className="min-h-screen flex flex-col bg-slate-950">
+      {/* ── Branding Header ─────────────────────────────────────────────── */}
+      <header className="w-full py-6 px-4 text-center">
+        <div className="inline-flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+            <span className="text-white font-bold text-sm">C</span>
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
+              Department of Computing & Information Systems
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-400 -mt-0.5">
+              GPA Portal
+            </p>
+          </div>
         </div>
 
-        {/* Heading */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center tracking-tight">
-          GPA Calculator
-        </h1>
-        <p className="mt-3 text-sm sm:text-base text-slate-400 text-center max-w-md">
-          Department of Computing &amp; Information Systems
-        </p>
-
-        {/* Divider */}
-        <div className="mt-10 mb-8 w-16 h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
-
-        {/* Login Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
-          {/* Student Login */}
-          <Link
-            href="/student/login"
-            className="group relative flex flex-col items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm p-8 shadow-lg transition-all duration-300 hover:border-emerald-500/40 hover:bg-slate-800/80 hover:shadow-emerald-500/10 hover:-translate-y-0.5"
-          >
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform duration-300 group-hover:scale-110">
-              <GraduationCap className="h-6 w-6 text-white" />
+      {/* ── Login Card ──────────────────────────────────────────────────── */}
+      <main className="flex-1 flex items-center justify-center px-4 pb-12">
+        <Card className="w-full max-w-md border-slate-700/50 bg-slate-800/60 backdrop-blur-xl shadow-2xl shadow-emerald-500/5">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <GraduationCap className="h-7 w-7 text-white" />
             </div>
-            <span className="text-lg font-semibold text-white">Student</span>
-            <span className="text-xs text-slate-500">View your GPA &amp; results</span>
-          </Link>
+            <CardTitle className="text-2xl font-bold text-white">
+              Student Login
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Sign in to view your GPA results
+            </CardDescription>
+          </CardHeader>
 
-          {/* Admin Login */}
-          <Link
-            href="/admin/login"
-            className="group relative flex flex-col items-center gap-3 rounded-xl border border-slate-700/50 bg-slate-800/50 backdrop-blur-sm p-8 shadow-lg transition-all duration-300 hover:border-blue-500/40 hover:bg-slate-800/80 hover:shadow-blue-500/10 hover:-translate-y-0.5"
-          >
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 transition-transform duration-300 group-hover:scale-110">
-              <ShieldCheck className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-lg font-semibold text-white">Admin</span>
-            <span className="text-xs text-slate-500">Manage portal &amp; results</span>
-          </Link>
-        </div>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Index Number */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="student-index"
+                  className="text-slate-300 text-sm"
+                >
+                  Index Number
+                </Label>
+                <Input
+                  id="student-index"
+                  type="text"
+                  placeholder="e.g. CS/2021/001"
+                  value={indexNumber}
+                  onChange={(e) => setIndexNumber(e.target.value)}
+                  required
+                  autoComplete="username"
+                  disabled={isLoading}
+                  className="h-11 bg-slate-700/50 border-slate-600/50 text-white placeholder:text-slate-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/50 transition-colors"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="student-password"
+                  className="text-slate-300 text-sm"
+                >
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="student-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    disabled={isLoading}
+                    className="h-11 pr-10 bg-slate-700/50 border-slate-600/50 text-white placeholder:text-slate-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/50 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* First-time login hint */}
+              <div className="flex items-start gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
+                <Info className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-emerald-300/90">
+                  <span className="font-medium">First-time login?</span> Your
+                  default password is{" "}
+                  <code className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-200 font-mono text-[11px]">
+                    123456789
+                  </code>
+                </p>
+              </div>
+
+              {/* Submit */}
+              <Button
+                id="student-login-submit"
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-emerald-500/30"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in…
+                  </span>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </main>
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}

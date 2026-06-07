@@ -52,7 +52,7 @@ export default function ErrorBoundary({
             className="
               inline-flex items-center gap-2 px-6 py-3 rounded-xl
               bg-blue-600
-              hover:bg-blue-500
+              hover:from-blue-500 hover:to-indigo-500
               text-white text-sm font-semibold
               shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30
               transition-all duration-200 hover:-translate-y-0.5
