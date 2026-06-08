@@ -147,7 +147,25 @@ async function seed() {
       .where(eq(subjects.subjectCode, sub.subjectCode))
       .limit(1);
     if (existing.length > 0) {
-      console.log(`Skip (exists): ${sub.subjectCode}`);
+      // Update creditPoints, subjectName, and isGpa to match seed data
+      const current = existing[0];
+      if (
+        current.creditPoints !== sub.creditPoints ||
+        current.subjectName !== sub.subjectName ||
+        current.isGpa !== sub.isGpa
+      ) {
+        await db
+          .update(subjects)
+          .set({
+            creditPoints: sub.creditPoints,
+            subjectName: sub.subjectName,
+            isGpa: sub.isGpa,
+          })
+          .where(eq(subjects.subjectCode, sub.subjectCode));
+        console.log(`Updated: ${sub.subjectCode} (credits: ${current.creditPoints} → ${sub.creditPoints})`);
+      } else {
+        console.log(`Skip (unchanged): ${sub.subjectCode}`);
+      }
       continue;
     }
     await db.insert(subjects).values({
